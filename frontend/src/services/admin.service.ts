@@ -96,6 +96,9 @@ export const adminService = {
   async deleteUser(userId: string): Promise<void> {
     await apiClient.delete(`/admin/users/${userId}`)
   },
+  async updateUserPassword(userId: string, password: string): Promise<void> {
+    await apiClient.put(`/admin/users/${userId}/password`, { password })
+  },
 
   // CSV Import (Client-side parsed)
   async importCSV(file: File, type: 'students' | 'faculty'): Promise<{ imported: number; errors: string[] }> {
@@ -108,7 +111,11 @@ export const adminService = {
     const headers = lines[0].split(',').map(h => h.trim().toLowerCase())
     const emailIndex = headers.indexOf('email')
     const nameIndex = headers.indexOf('name')
-    const leetcodeIndex = headers.indexOf('leetcodeusername') || headers.indexOf('leetcode')
+    const leetcodeIndex = headers.indexOf('leetcodeusername') > -1 ? headers.indexOf('leetcodeusername') : headers.indexOf('leetcode')
+    const deptIndex = headers.indexOf('dept') > -1 ? headers.indexOf('dept') : headers.indexOf('department')
+    const passwordIndex = headers.indexOf('password')
+    const rollNoIndex = headers.findIndex(h => ['roll number', 'rollno', 'roll no', 'reg num', 'regnum'].includes(h))
+    const empIdIndex = headers.findIndex(h => ['emp id', 'empid', 'employee id', 'employeeid'].includes(h))
 
     if (emailIndex === -1 || nameIndex === -1) {
       return { imported: 0, errors: ['CSV must contain "email" and "name" columns'] }
@@ -120,6 +127,10 @@ export const adminService = {
         email: parts[emailIndex],
         name: parts[nameIndex],
         leetcodeUsername: leetcodeIndex !== -1 ? parts[leetcodeIndex] : undefined,
+        departmentCode: deptIndex !== -1 ? parts[deptIndex] : undefined,
+        password: passwordIndex !== -1 ? parts[passwordIndex] : undefined,
+        rollNo: rollNoIndex !== -1 ? parts[rollNoIndex] : undefined,
+        employeeId: empIdIndex !== -1 ? parts[empIdIndex] : undefined,
       }
     })
 
@@ -142,5 +153,28 @@ export const adminService = {
   async syncAllUsers() {
     const { data } = await apiClient.post('/admin/sync/all')
     return data
+  },
+
+  async syncUser(userId: string) {
+    const { data } = await apiClient.post(`/admin/sync/user/${userId}`)
+    return data
+  },
+
+  async getUser(userId: string): Promise<UserProfile> {
+    const { data } = await apiClient.get(`/admin/users/${userId}`)
+    return data
+  },
+
+  async exportExcelReport(): Promise<void> {
+    const response = await apiClient.get('/admin/reports/export', {
+      responseType: 'blob'
+    })
+    const url = window.URL.createObjectURL(new Blob([response.data]))
+    const link = document.createElement('a')
+    link.href = url
+    link.setAttribute('download', `codepulse_report_${new Date().toISOString().slice(0,10)}.xlsx`)
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
   },
 }

@@ -11,7 +11,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const { setUser, setFirebaseUser, setLoading } = useAuthStore()
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: any) => {
       setLoading(true)
       if (firebaseUser) {
         setFirebaseUser(firebaseUser)
@@ -21,8 +21,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
         } catch (err: any) {
           const status = err?.response?.status
           if (status === 404) {
-            const authPagePaths = ['/login', '/register']
-            const isAuthPage = authPagePaths.includes(window.location.pathname)
+            const authPagePaths = ['/login', '/register', '/admin']
+            const isAuthPage = authPagePaths.some(p => window.location.pathname.startsWith(p))
 
             if (isAuthPage) {
               setFirebaseUser(firebaseUser)
@@ -40,14 +40,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
           setUser(null)
         }
       } else {
+        // No Firebase user — check for mockToken (works in both dev and prod for demo mode)
         const mockToken = localStorage.getItem('mockToken')
-        if (mockToken && import.meta.env.DEV) {
+        if (mockToken) {
           try {
             const profile = await authService.getCurrentUser()
             setFirebaseUser({
-              uid: 'seed-admin-uid-001',
-              email: 'abishstk@gmail.com',
-              displayName: 'VSB Administrator',
+              uid: profile.firebaseUid,
+              email: profile.email,
+              displayName: profile.name,
               getIdToken: async () => mockToken,
             } as any)
             setUser(profile)

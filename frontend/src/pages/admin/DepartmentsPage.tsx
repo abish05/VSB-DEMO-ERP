@@ -123,7 +123,7 @@ export default function DepartmentsPage() {
           { label: 'Total Departments', value: departments.length, color: 'text-primary' },
         ].map((s) => (
           <div key={s.label} className="stat-card">
-            <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider">{s.label}</p>
+            <p className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">{s.label}</p>
             <p className={`text-2xl font-bold mt-2 ${s.color}`}>{s.value}</p>
           </div>
         ))}
@@ -173,19 +173,19 @@ export default function DepartmentsPage() {
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-6 shadow-2xl relative"
+            className="bg-card border border-border rounded-2xl w-full max-w-md p-6 shadow-2xl relative"
           >
-            <button onClick={closeModal} className="absolute top-4 right-4 text-slate-500 hover:text-slate-300">
+            <button onClick={closeModal} className="absolute top-4 right-4 text-muted-foreground hover:text-foreground">
               <X className="w-5 h-5" />
             </button>
-            <h2 className="text-lg font-bold text-slate-200 mb-4">{editingDept ? 'Edit Department Details' : 'Add Department'}</h2>
+            <h2 className="text-lg font-bold text-foreground mb-4">{editingDept ? 'Edit Department Details' : 'Add Department'}</h2>
             <form onSubmit={handleSave} className="space-y-4">
-              <Input label="Department Code" value={code} onChange={(e) => setCode(e.target.value)} required placeholder="CSE" className="bg-slate-950 border-slate-800" />
-              <Input label="Department Name" value={name} onChange={(e) => setName(e.target.value)} required placeholder="Computer Science & Engineering" className="bg-slate-950 border-slate-800" />
-              <Input label="Description (Optional)" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Manage CS curriculum" className="bg-slate-950 border-slate-800" />
+              <Input label="Department Code" value={code} onChange={(e) => setCode(e.target.value)} required placeholder="CSE" className="bg-background border-input" />
+              <Input label="Department Name" value={name} onChange={(e) => setName(e.target.value)} required placeholder="Computer Science & Engineering" className="bg-background border-input" />
+              <Input label="Description (Optional)" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Manage CS curriculum" className="bg-background border-input" />
 
               <div className="flex gap-3 justify-end pt-4">
-                <Button type="button" variant="outline" onClick={closeModal} className="border-slate-800 text-slate-400 hover:bg-slate-800">Cancel</Button>
+                <Button type="button" variant="outline" onClick={closeModal} className="border-input text-muted-foreground hover:bg-muted">Cancel</Button>
                 <Button type="submit" isLoading={createMutation.isPending || updateMutation.isPending}>Save Department</Button>
               </div>
             </form>

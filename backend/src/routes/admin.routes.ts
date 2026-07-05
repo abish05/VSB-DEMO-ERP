@@ -2,7 +2,8 @@ import { Router, Request, Response, NextFunction } from 'express'
 import { authenticate, AuthRequest, requireRole } from '@/middleware/auth'
 import prisma from '@/config/prisma'
 import { Role, SyncStatus, NotificationType } from '@prisma/client'
-import { syncAllUsers } from '@/services/sync.service'
+import { syncAllUsers, syncUser } from '@/services/sync.service'
+import { firebaseAuth } from '@/config/firebase'
 
 const router = Router()
 
@@ -587,6 +588,37 @@ router.put('/users/:id', async (req: AuthRequest, res: Response) => {
   }
 })
 
+// PUT /api/admin/users/:id/password
+router.put('/users/:id/password', async (req: AuthRequest, res: Response) => {
+  try {
+    const id = req.params.id as string
+    const { password } = req.body
+
+    if (!password || password.length < 6) {
+      return res.status(400).json({ message: 'Password must be at least 6 characters' })
+    }
+
+    // Get the user to find their firebaseUid
+    const user = await prisma.user.findUnique({
+      where: { id }
+    })
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' })
+    }
+
+    // Update password in Firebase Auth
+    await firebaseAuth.updateUser(user.firebaseUid, {
+      password
+    })
+
+    res.json({ message: 'Password updated successfully' })
+  } catch (err: any) {
+    console.error('Failed to update password:', err)
+    res.status(400).json({ message: err.message || 'Failed to update password' })
+  }
+})
+
 // POST /api/admin/import/json
 router.post('/import/json', async (req: AuthRequest, res: Response) => {
   try {
@@ -601,13 +633,30 @@ router.post('/import/json', async (req: AuthRequest, res: Response) => {
       }
 
       try {
+        let actualDeptId = u.departmentId || null
+        if (u.departmentCode) {
+          const deptRecord = await prisma.department.findUnique({
+            where: { code: u.departmentCode.toUpperCase() }
+          })
+          if (deptRecord) actualDeptId = deptRecord.id
+        }
+
+        // Create actual Firebase Auth account with default password
+        const fbUser = await firebaseAuth.createUser({
+          email: u.email,
+          password: u.password || 'welcome123',
+          displayName: u.name,
+        })
+
         await prisma.user.create({
           data: {
-            firebaseUid: `seed-${type}-${Math.random().toString(36).substring(2, 9)}`,
+            firebaseUid: fbUser.uid,
             email: u.email,
             name: u.name,
             role: type === 'students' ? Role.STUDENT : Role.FACULTY,
-            departmentId: u.departmentId || null,
+            departmentId: actualDeptId,
+            rollNo: u.rollNo || null,
+            employeeId: u.employeeId || null,
             sectionId: u.sectionId || null,
             isActive: true,
             leetcodeProfile: (type === 'students' && u.leetcodeUsername) ? {
@@ -638,27 +687,68 @@ router.post('/import/json', async (req: AuthRequest, res: Response) => {
   }
 })
 
-// GET /api/admin/reports
-router.get('/reports', async (_req: Request, res: Response) => {
+// GET /api/admin/reports — JSON data for the in-app table
+router.get('/reports', async (req: Request, res: Response) => {
   try {
+    const type = String(req.query.type || 'solve-count')
+    const now = new Date()
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+
     const students = await prisma.user.findMany({
       where: { role: Role.STUDENT },
-      include: { leetcodeProfile: true }
+      include: { leetcodeProfile: true },
+      orderBy: { name: 'asc' },
     })
+
+    // Build today solved map
+    const todayActivity = await prisma.dailyActivity.findMany({
+      where: { date: { gte: todayStart } },
+    })
+    const todaySolvedMap: Record<string, number> = {}
+    todayActivity.forEach(a => {
+      todaySolvedMap[a.userId] = (todaySolvedMap[a.userId] || 0) + a.solved
+    })
+
     const reportData = students.map(s => ({
       name: s.name,
       email: s.email,
+      rollNo: s.rollNo || '—',
       solved: s.leetcodeProfile?.totalSolved || 0,
       easy: s.leetcodeProfile?.easySolved || 0,
       medium: s.leetcodeProfile?.mediumSolved || 0,
       hard: s.leetcodeProfile?.hardSolved || 0,
+      solvedToday: todaySolvedMap[s.id] || 0,
       rating: s.leetcodeProfile?.contestRating || 0,
+      streak: s.leetcodeProfile?.currentStreak || 0,
+      contests: s.leetcodeProfile?.totalContestsParticipated || 0,
+      username: s.leetcodeProfile?.username || '—',
     }))
-    res.json(reportData)
+
+    if (type === 'contest-rating') {
+      return res.json(reportData.sort((a, b) => b.rating - a.rating))
+    }
+    res.json(reportData.sort((a, b) => b.solved - a.solved))
   } catch (err) {
     res.status(500).json({ message: 'Reports generation failed' })
   }
 })
+
+// GET /api/admin/reports/export — Full multi-sheet Excel download
+router.get('/reports/export', async (_req: Request, res: Response) => {
+  try {
+    const { generateExcelReport } = await import('@/services/report.service')
+    const buffer = await generateExcelReport()
+    const filename = `codepulse_report_${new Date().toISOString().slice(0, 10)}.xlsx`
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`)
+    res.setHeader('Cache-Control', 'no-cache')
+    res.send(buffer)
+  } catch (err) {
+    console.error('Excel export failed:', err)
+    res.status(500).json({ message: 'Failed to generate Excel report' })
+  }
+})
+
 
 // POST /api/admin/notifications
 router.post('/notifications', async (req: AuthRequest, res: Response) => {
@@ -695,6 +785,33 @@ router.post('/sync/all', async (_req: Request, res: Response) => {
     res.json({ message: 'Global LeetCode sync started in background' })
   } catch (err) {
     res.status(500).json({ message: 'Failed to trigger global sync' })
+  }
+})
+
+// POST /api/admin/sync/user/:id
+router.post('/sync/user/:id', async (req: AuthRequest, res: Response) => {
+  try {
+    const id = req.params.id as string
+    const profile = await prisma.leetCodeProfile.findUnique({ where: { userId: id } })
+    if (!profile) {
+      return res.status(404).json({ message: 'No LeetCode profile linked for this user' })
+    }
+    syncUser(id).catch((err) => console.error(`Sync failed for user ${id}:`, err))
+    res.json({ message: 'LeetCode sync started for user' })
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to trigger user sync' })
+  }
+})
+
+// GET /api/admin/users/:id
+router.get('/users/:id', async (req: Request, res: Response) => {
+  try {
+    const id = req.params.id as string
+    const user = await resolveUserRelations(id)
+    if (!user) return res.status(404).json({ message: 'User not found' })
+    res.json(user)
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to fetch user' })
   }
 })
 

@@ -138,7 +138,7 @@ export default function SectionsPage() {
                 { key: 'name', label: 'Section Class', sortable: true, render: (r) => <span className="font-semibold">Class {r.name as string}</span> },
                 { key: 'batch', label: 'Batch Name', render: (r: any) => <span>{r.batch?.name || '—'}</span> },
                 { key: 'dept', label: 'Department', render: (r: any) => <Badge variant="secondary">{r.batch?.department?.code || '—'}</Badge> },
-                { key: 'advisor', label: 'Faculty Advisor', render: (r: any) => <span className="text-xs font-semibold text-slate-400">{r.faculty?.name || '—'}</span> },
+                { key: 'advisor', label: 'Faculty Advisor', render: (r: any) => <span className="text-xs font-semibold text-muted-foreground">{r.faculty?.name || '—'}</span> },
                 {
                   key: 'actions',
                   label: 'Actions',
@@ -167,31 +167,31 @@ export default function SectionsPage() {
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-6 shadow-2xl relative"
+            className="bg-card border border-border rounded-2xl w-full max-w-md p-6 shadow-2xl relative"
           >
-            <button onClick={closeModal} className="absolute top-4 right-4 text-slate-500 hover:text-slate-300">
+            <button onClick={closeModal} className="absolute top-4 right-4 text-muted-foreground hover:text-foreground">
               <X className="w-5 h-5" />
             </button>
-            <h2 className="text-lg font-bold text-slate-200 mb-4">{editingSection ? 'Edit Section Details' : 'Add Section'}</h2>
+            <h2 className="text-lg font-bold text-foreground mb-4">{editingSection ? 'Edit Section Details' : 'Add Section'}</h2>
             <form onSubmit={handleSave} className="space-y-4">
-              <Input label="Section Name" value={name} onChange={(e) => setName(e.target.value)} required placeholder="A" className="bg-slate-950 border-slate-800" />
+              <Input label="Section Name" value={name} onChange={(e) => setName(e.target.value)} required placeholder="A" className="bg-background border-input" />
 
               <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-semibold text-slate-400">Associated Batch</label>
-                <select value={batchId} onChange={(e) => setBatchId(e.target.value)} className="bg-slate-950 border border-slate-800 rounded-lg h-10 px-3 text-sm focus:outline-none focus:border-primary">
+                <label className="text-xs font-semibold text-foreground">Associated Batch</label>
+                <select value={batchId} onChange={(e) => setBatchId(e.target.value)} className="bg-background border border-input rounded-lg h-10 px-3 text-sm focus:outline-none focus:border-primary text-foreground">
                   {batches?.map((b) => <option key={b.id} value={b.id}>{b.name} ({b.department?.code})</option>)}
                 </select>
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-semibold text-slate-400">Faculty Advisor</label>
-                <select value={facultyId} onChange={(e) => setFacultyId(e.target.value)} className="bg-slate-950 border border-slate-800 rounded-lg h-10 px-3 text-sm focus:outline-none focus:border-primary">
+                <label className="text-xs font-semibold text-foreground">Faculty Advisor</label>
+                <select value={facultyId} onChange={(e) => setFacultyId(e.target.value)} className="bg-background border border-input rounded-lg h-10 px-3 text-sm focus:outline-none focus:border-primary text-foreground">
                   {facultyMembers?.map((f) => <option key={f.id} value={f.id}>{f.name}</option>)}
                 </select>
               </div>
 
               <div className="flex gap-3 justify-end pt-4">
-                <Button type="button" variant="outline" onClick={closeModal} className="border-slate-800 text-slate-400 hover:bg-slate-800">Cancel</Button>
+                <Button type="button" variant="outline" onClick={closeModal} className="border-input text-muted-foreground hover:bg-muted">Cancel</Button>
                 <Button type="submit" isLoading={createMutation.isPending || updateMutation.isPending}>Save Section</Button>
               </div>
             </form>

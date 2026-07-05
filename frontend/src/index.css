@@ -6,26 +6,26 @@
 
 @layer base {
   :root {
-    --background: 210 40% 98%;
+    --background: 220 20% 97%;
     --foreground: 222 47% 11%;
     --card: 0 0% 100%;
     --card-foreground: 222 47% 11%;
     --popover: 0 0% 100%;
     --popover-foreground: 222 47% 11%;
-    --primary: 217 91% 60%;
+    --primary: 358 79% 50%; /* #E31E24 */
     --primary-foreground: 0 0% 100%;
     --secondary: 222 47% 11%;
     --secondary-foreground: 0 0% 100%;
     --muted: 210 40% 96%;
     --muted-foreground: 215 16% 47%;
     --accent: 210 40% 94%;
-    --accent-foreground: 222 47% 11%;
+    --accent-foreground: 358 79% 50%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
     --border: 214 32% 91%;
     --input: 214 32% 91%;
-    --ring: 217 91% 60%;
-    --radius: 0.625rem;
+    --ring: 358 79% 50%;
+    --radius: 0.5rem;
     --sidebar-width: 256px;
     --sidebar-collapsed-width: 64px;
     --topbar-height: 64px;
@@ -77,11 +77,11 @@
   /* Sidebar styles */
   .sidebar-link {
     @apply flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150
-           text-slate-400 hover:text-white hover:bg-white/10;
+           text-sidebar-foreground hover:text-white hover:bg-sidebar-hover;
   }
 
   .sidebar-link.active {
-    @apply bg-primary/20 text-primary;
+    @apply bg-primary text-white;
   }
 
   /* Badge variants */

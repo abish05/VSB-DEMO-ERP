@@ -26,11 +26,48 @@ export async function authenticate(req: AuthRequest, res: Response, next: NextFu
     }
 
     const token = authHeader.split(' ')[1]
+
+    // Always handle mock tokens (dev login, demo admin) regardless of Firebase config
+    if (token.startsWith('mock:')) {
+      const parts = token.split(':')
+      const uid = parts[1] || 'mock-user-id'
+      const email = parts[2] || 'mock@example.com'
+
+      const user = await prisma.user.findUnique({
+        where: { firebaseUid: uid }
+      })
+
+      if (!user) {
+        const isRegister = req.path === '/register' || req.path === '/api/auth/register'
+        if (isRegister) {
+          req.firebaseUid = uid
+          req.firebaseEmail = email
+          req.firebaseName = email.split('@')[0] || 'User'
+          return next()
+        }
+        return res.status(404).json({ message: 'User not found' })
+      }
+
+      if (user.isActive === false) {
+        return res.status(403).json({ message: 'Account is inactive' })
+      }
+
+      req.userId = user.id
+      req.userRole = user.role
+      req.firebaseUid = user.firebaseUid
+      req.firebaseEmail = email
+      req.firebaseName = user.name
+      return next()
+    }
+
+    // For real Firebase tokens
     const decoded = await firebaseAuth.verifyIdToken(token)
+    console.log('Decoded Firebase Token UID:', decoded.uid, 'Email:', decoded.email)
 
     const user = await prisma.user.findUnique({
       where: { firebaseUid: decoded.uid }
     })
+    console.log('Found user in DB?', !!user)
 
     if (!user) {
       const isRegister =

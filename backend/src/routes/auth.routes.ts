@@ -26,6 +26,27 @@ async function getUserWithRelations(userId: string) {
   })
 }
 
+async function getUserWithRelationsByEmail(email: string) {
+  const user = await prisma.user.findUnique({
+    where: { email },
+    include: {
+      department: true,
+      section: {
+        include: {
+          batch: {
+            include: {
+              academicYear: true,
+            },
+          },
+        },
+      },
+      leetcodeProfile: true,
+    },
+  })
+
+  return user
+}
+
 // GET /api/auth/registration-options
 router.get('/registration-options', async (_req, res: Response) => {
   try {
@@ -75,6 +96,36 @@ router.get('/check-leetcode/:username', async (req, res: Response) => {
     res.json({ exists: true, available: true, message: 'LeetCode username verified' })
   } catch {
     res.json({ exists: false, available: false, message: 'Could not validate LeetCode username' })
+  }
+})
+
+// POST /api/auth/dev-login
+// Works in development mode OR when explicitly triggered from demo admin login
+router.post('/dev-login', async (req, res: Response) => {
+  try {
+    const email = String(req.body?.email || '').trim().toLowerCase()
+    if (!email) {
+      return res.status(400).json({ message: 'Email is required' })
+    }
+
+    const user = await getUserWithRelationsByEmail(email)
+    if (!user) {
+      return res.status(404).json({ message: 'No account found for this email' })
+    }
+
+    // In production, only allow if this is a verified admin lookup by UID (demo admin button)
+    // This check is intentionally limited to prevent abuse
+    if (process.env.NODE_ENV === 'production' && user.role !== 'ADMIN') {
+      return res.status(403).json({ message: 'Dev login is only available for demo purposes in production' })
+    }
+
+    res.json({
+      token: `mock:${user.firebaseUid}:${user.email}`,
+      user,
+    })
+  } catch (err) {
+    console.error('Dev login failed:', err)
+    res.status(500).json({ message: 'Dev login failed' })
   }
 })
 

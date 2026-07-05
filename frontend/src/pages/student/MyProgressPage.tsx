@@ -1,24 +1,57 @@
+import { useMemo } from 'react'
 import { motion } from 'framer-motion'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { SolvedAreaChart, DifficultyPieChart } from '@/components/charts/Charts'
 import { Target, CheckCircle, Zap, TrendingUp } from 'lucide-react'
+import { useAuth } from '@/hooks/useAuth'
 
 const containerVariants = { hidden: {}, show: { transition: { staggerChildren: 0.07 } } }
 const itemVariants = { hidden: { opacity: 0, y: 16 }, show: { opacity: 1, y: 0, transition: { duration: 0.35 } } }
 
-const pieData = [
-  { name: 'Easy', value: 142, color: '#22C55E' },
-  { name: 'Medium', value: 142, color: '#F59E0B' },
-  { name: 'Hard', value: 40, color: '#EF4444' },
-]
+function calendarToMonthlyData(calendarStr?: string | Record<string, number>) {
+  if (!calendarStr) return []
+  
+  const parsed = typeof calendarStr === 'string' ? JSON.parse(calendarStr) : calendarStr
+  const monthlyCounts: Record<string, number> = {}
+  
+  Object.entries(parsed as Record<string, number>).forEach(([timestamp, count]) => {
+    const date = new Date(Number(timestamp) * 1000)
+    if (!Number.isNaN(date.getTime())) {
+      const monthKey = date.toLocaleString('default', { month: 'short', year: 'numeric' })
+      monthlyCounts[monthKey] = (monthlyCounts[monthKey] || 0) + count
+    }
+  })
 
-const monthlyData = [
-  { month: 'Jan', solved: 45 }, { month: 'Feb', solved: 52 }, { month: 'Mar', solved: 38 },
-  { month: 'Apr', solved: 61 }, { month: 'May', solved: 47 }, { month: 'Jun', solved: 58 },
-  { month: 'Jul', solved: 29 },
-]
+  // Get last 6 months in order
+  const result = []
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date()
+    d.setMonth(d.getMonth() - i)
+    const monthKey = d.toLocaleString('default', { month: 'short', year: 'numeric' })
+    const monthLabel = d.toLocaleString('default', { month: 'short' })
+    result.push({ month: monthLabel, solved: monthlyCounts[monthKey] || 0 })
+  }
+  
+  return result
+}
 
 export default function MyProgressPage() {
+  const { user } = useAuth()
+  const profile = user?.leetcodeProfile
+
+  const easy = profile?.easySolved || 0
+  const medium = profile?.mediumSolved || 0
+  const hard = profile?.hardSolved || 0
+  const total = profile?.totalSolved || 0
+
+  const pieData = [
+    { name: 'Easy', value: easy, color: '#22C55E' },
+    { name: 'Medium', value: medium, color: '#F59E0B' },
+    { name: 'Hard', value: hard, color: '#EF4444' },
+  ]
+
+  const monthlyData = useMemo(() => calendarToMonthlyData(profile?.submissionCalendar), [profile?.submissionCalendar])
+
   return (
     <motion.div variants={containerVariants} initial="hidden" animate="show" className="space-y-6">
       <motion.div variants={itemVariants}>
@@ -29,9 +62,9 @@ export default function MyProgressPage() {
       {/* Difficulty breakdown */}
       <motion.div variants={itemVariants} className="grid grid-cols-3 gap-4">
         {[
-          { label: 'Easy', value: 142, total: 800, color: 'text-success', bg: 'bg-success', pct: 17.75 },
-          { label: 'Medium', value: 142, total: 1600, color: 'text-warning', bg: 'bg-warning', pct: 8.875 },
-          { label: 'Hard', value: 40, total: 600, color: 'text-error', bg: 'bg-error', pct: 6.67 },
+          { label: 'Easy', value: easy, total: 800, color: 'text-success', bg: 'bg-success', pct: Math.min((easy / 800) * 100, 100) },
+          { label: 'Medium', value: medium, total: 1600, color: 'text-warning', bg: 'bg-warning', pct: Math.min((medium / 1600) * 100, 100) },
+          { label: 'Hard', value: hard, total: 800, color: 'text-error', bg: 'bg-error', pct: Math.min((hard / 800) * 100, 100) },
         ].map((d) => (
           <Card key={d.label}>
             <CardContent className="pt-6 text-center">
@@ -74,11 +107,11 @@ export default function MyProgressPage() {
           <CardHeader><CardTitle className="text-sm">Progress Goals</CardTitle></CardHeader>
           <CardContent className="space-y-4">
             {[
-              { label: 'Solve 500 problems', current: 324, target: 500, icon: <Target className="w-4 h-4" /> },
-              { label: 'Solve 200 medium problems', current: 142, target: 200, icon: <Zap className="w-4 h-4" /> },
-              { label: 'Solve 100 hard problems', current: 40, target: 100, icon: <CheckCircle className="w-4 h-4" /> },
+              { label: 'Solve 500 problems', current: total, target: 500, icon: <Target className="w-4 h-4" /> },
+              { label: 'Solve 200 medium problems', current: medium, target: 200, icon: <Zap className="w-4 h-4" /> },
+              { label: 'Solve 100 hard problems', current: hard, target: 100, icon: <CheckCircle className="w-4 h-4" /> },
             ].map((g) => {
-              const pct = Math.round((g.current / g.target) * 100)
+              const pct = Math.min(Math.round((g.current / g.target) * 100), 100)
               return (
                 <div key={g.label}>
                   <div className="flex items-center justify-between mb-2">

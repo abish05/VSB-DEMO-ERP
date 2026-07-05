@@ -99,8 +99,8 @@ export default function CSVImportPage() {
               onClick={() => { setImportType('students'); setFile(null); setPreviewRows([]) }}
             >
               <div>
-                <p className="text-sm font-bold text-slate-200">Students Roster</p>
-                <p className="text-xs text-slate-500 mt-1">Imports student logs & creates profiles</p>
+                <p className="text-sm font-bold text-foreground">Students Roster</p>
+                <p className="text-xs text-muted-foreground mt-1">Imports student logs & creates profiles</p>
               </div>
               <Badge>STUDENT</Badge>
             </div>
@@ -112,8 +112,8 @@ export default function CSVImportPage() {
               onClick={() => { setImportType('faculty'); setFile(null); setPreviewRows([]) }}
             >
               <div>
-                <p className="text-sm font-bold text-slate-200">Faculty Registry</p>
-                <p className="text-xs text-slate-500 mt-1">Imports faculty advisors accounts</p>
+                <p className="text-sm font-bold text-foreground">Faculty Registry</p>
+                <p className="text-xs text-muted-foreground mt-1">Imports faculty advisors accounts</p>
               </div>
               <Badge variant="secondary">FACULTY</Badge>
             </div>
@@ -126,28 +126,27 @@ export default function CSVImportPage() {
             <CardTitle className="text-sm font-semibold">2. Choose CSV File</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="bg-slate-950 border border-slate-800 rounded-xl p-4 flex gap-3 text-xs text-slate-400">
-              <Info className="w-5 h-5 text-primary shrink-0" />
+            <div className="bg-muted/50 border border-border rounded-xl p-4 flex gap-3 text-xs text-muted-foreground">
+              <Info className="w-4 h-4 text-primary shrink-0 mt-0.5" />
               <div>
-                <p className="font-semibold text-slate-300">CSV Template Columns Required:</p>
-                <p className="font-mono text-slate-500 mt-1">
-                  name, email{importType === 'students' ? ', leetcodeUsername' : ''}
-                </p>
+                <p className="font-semibold text-foreground mb-1">CSV Template Columns (Required: name, email)</p>
+                <p><strong>Students:</strong> name, email, leetcodeUsername, dept, password, rollNo</p>
+                <p><strong>Faculty:</strong> name, email, dept, password, empId</p>
               </div>
             </div>
 
-            <div className="border border-dashed border-slate-800 rounded-xl p-8 text-center hover:border-slate-700 transition-colors cursor-pointer relative bg-slate-950/20">
+            <div className="border border-dashed border-border rounded-xl p-8 text-center hover:border-input transition-colors cursor-pointer relative bg-muted/50">
               <input
                 type="file"
                 accept=".csv"
                 onChange={handleFileChange}
                 className="absolute inset-0 opacity-0 cursor-pointer"
               />
-              <UploadCloud className="w-10 h-10 text-slate-500 mx-auto mb-2" />
-              <p className="text-sm font-bold text-slate-300">
+              <UploadCloud className="w-10 h-10 text-muted-foreground mx-auto mb-2" />
+              <p className="text-sm font-bold text-muted-foreground">
                 {file ? file.name : 'Select or drop CSV file'}
               </p>
-              <p className="text-xs text-slate-500 mt-1">Only .csv files up to 10MB supported</p>
+              <p className="text-xs text-muted-foreground mt-1">Only .csv files up to 10MB supported</p>
             </div>
           </CardContent>
         </Card>
@@ -170,7 +169,7 @@ export default function CSVImportPage() {
                 <thead>
                   <tr className="bg-muted/30 border-b border-border">
                     {headers.map(h => (
-                      <th key={h} className="px-6 py-3 text-left text-xs font-semibold uppercase text-slate-400 tracking-wider">
+                      <th key={h} className="px-6 py-3 text-left text-xs font-semibold uppercase text-muted-foreground tracking-wider">
                         {h}
                       </th>
                     ))}
@@ -180,7 +179,7 @@ export default function CSVImportPage() {
                   {previewRows.map((row, idx) => (
                     <tr key={idx} className="hover:bg-slate-50/5">
                       {headers.map(h => (
-                        <td key={h} className="px-6 py-3 text-xs font-medium text-slate-300">
+                        <td key={h} className="px-6 py-3 text-xs font-medium text-muted-foreground">
                           {row[h] || <span className="text-slate-600 italic">empty</span>}
                         </td>
                       ))}
@@ -201,7 +200,7 @@ export default function CSVImportPage() {
               <CheckCircle className="w-5 h-5 text-success shrink-0" />
               <div>
                 <h4 className="text-sm font-bold text-success">Import Complete</h4>
-                <p className="text-xs text-slate-400 mt-1">{successMsg}</p>
+                <p className="text-xs text-muted-foreground mt-1">{successMsg}</p>
               </div>
             </div>
           )}
@@ -211,7 +210,7 @@ export default function CSVImportPage() {
               <AlertCircle className="w-5 h-5 text-error shrink-0" />
               <div>
                 <h4 className="text-sm font-bold text-error">Import Warnings / Errors</h4>
-                <pre className="text-xs text-slate-400 mt-1 whitespace-pre-wrap max-h-48 overflow-y-auto font-mono">
+                <pre className="text-xs text-muted-foreground mt-1 whitespace-pre-wrap max-h-48 overflow-y-auto font-mono">
                   {error}
                 </pre>
               </div>

@@ -65,7 +65,7 @@ VITE_FIREBASE_PROJECT_ID=your-project-id
 VITE_FIREBASE_STORAGE_BUCKET=your-project.appspot.com
 VITE_FIREBASE_MESSAGING_SENDER_ID=your-sender-id
 VITE_FIREBASE_APP_ID=your-app-id
-VITE_API_URL=http://localhost:5000/api
+VITE_API_URL=http://localhost:5001/api
 ```
 
 **Backend** — copy `.env.example` to `.env`:
@@ -75,8 +75,8 @@ DIRECT_URL="postgresql://postgres:[password]@db.[ref].supabase.co:5432/postgres"
 FIREBASE_PROJECT_ID=your-project-id
 FIREBASE_CLIENT_EMAIL=firebase-adminsdk@your-project.iam.gserviceaccount.com
 FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----"
-PORT=5000
-FRONTEND_URL=http://localhost:3000
+PORT=5001
+FRONTEND_URL=http://localhost:3001
 ```
 
 ### 3. Setup Database

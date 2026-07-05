@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { motion, AnimatePresence } from 'framer-motion'
-import { auth, createUserWithEmailAndPassword, sendEmailVerification } from '@/lib/firebase'
+import { auth, createUserWithEmailAndPassword, sendEmailVerification, type User as FirebaseUser } from '@/lib/firebase'
+import { missingFirebaseEnv } from '@/lib/firebaseConfig'
 import { authService } from '@/services/auth.service'
 import { useAuthStore } from '@/store/authStore'
 import { Button } from '@/components/ui/button'
@@ -78,6 +79,7 @@ export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [syncMessage, setSyncMessage] = useState('')
+  const location = useLocation()
   
   // Registration options dropdown lists
   const [departments, setDepartments] = useState<Department[]>([])
@@ -93,7 +95,11 @@ export default function RegisterPage() {
 
   const { register, handleSubmit, watch, setValue, formState: { errors, isSubmitting } } = useForm<RegisterForm>({
     resolver: zodResolver(schema),
-    defaultValues: { role: 'STUDENT' }
+    defaultValues: { 
+      role: 'STUDENT',
+      email: location.state?.email || '',
+      name: location.state?.name || ''
+    }
   })
 
   const selectedRole = watch('role')
@@ -167,8 +173,29 @@ export default function RegisterPage() {
     }
 
     try {
-      const { user: firebaseUser } = await createUserWithEmailAndPassword(auth, data.email, data.password)
-      await sendEmailVerification(firebaseUser)
+      const useDevAuth = import.meta.env.DEV && missingFirebaseEnv.length > 0
+      let firebaseUser: any = auth.currentUser;
+      
+      if (useDevAuth) {
+        firebaseUser = {
+            uid: `dev-${crypto.randomUUID()}`,
+            email: data.email,
+            displayName: data.name,
+            getIdToken: async () => localStorage.getItem('mockToken') || '',
+        }
+        localStorage.setItem('mockToken', `mock:${firebaseUser.uid}:${data.email}`)
+      } else if (!firebaseUser || firebaseUser.email !== data.email) {
+        try {
+          firebaseUser = (await createUserWithEmailAndPassword(auth, data.email, data.password)).user
+          await sendEmailVerification(firebaseUser as FirebaseUser)
+        } catch (e: any) {
+          if (e.code === 'auth/email-already-in-use') {
+             throw new Error('This email is already in use. If you signed in with Google, please log in with Google first, then you will be redirected here.')
+          }
+          throw e;
+        }
+      }
+
       setFirebaseUser(firebaseUser)
 
       const profile = await authService.registerUser({
@@ -206,47 +233,50 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-8 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
+    <div className="min-h-screen flex items-center justify-center p-8 bg-gradient-to-br from-[#002147] via-[#0A223D] to-[#004479]">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
-        className="w-full max-w-lg bg-slate-900/50 backdrop-blur-xl border border-slate-800 p-8 rounded-2xl shadow-2xl relative overflow-hidden"
+        className="w-full max-w-lg bg-card backdrop-blur-xl border border-border p-8 rounded-2xl shadow-2xl relative overflow-hidden"
       >
-        <div className="absolute top-0 right-0 w-36 h-36 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute top-0 right-0 w-36 h-36 bg-[#D51616]/20 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 left-0 w-36 h-36 bg-[#FDC500]/20 rounded-full blur-3xl pointer-events-none" />
 
         <div className="flex items-center gap-3 mb-6">
-          <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center border border-primary/20">
-            <Code2 className="w-5 h-5 text-white" />
+            <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center p-1.5 shrink-0">
+              <img src="/logo.png" alt="Logo" className="w-full h-full object-contain" />
+            </div>
+            <p className="font-bold text-foreground">VSBCETC LeetCode</p>
           </div>
-          <div>
-            <p className="font-bold text-slate-100">VSB LeetCode</p>
-            <p className="text-xs text-primary font-semibold tracking-wider">Analytics Console</p>
-          </div>
-        </div>
+          <h2 className="text-2xl font-bold mb-1 text-foreground">Create an account</h2>
+          <p className="text-muted-foreground text-sm mb-6">Join VSBCETC LeetCode dashboard</p>
 
-        <h2 className="text-xl font-bold text-slate-100 mb-1">Create your profile</h2>
-        <p className="text-slate-400 text-sm mb-6">Join VSB LeetCode dashboard</p>
+        {missingFirebaseEnv.length > 0 && (
+          <div className="text-sm text-rose-400 bg-rose-950/20 border border-rose-900/50 rounded-lg px-4 py-3 mb-4">
+            Firebase browser auth is not configured, so local demo registration will use a development session. Real LeetCode sync still runs through the backend.
+          </div>
+        )}
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <Input
               label="Full Name"
               placeholder="John Doe"
-              leftIcon={<User className="w-4 h-4 text-slate-500" />}
+              leftIcon={<User className="w-4 h-4 text-muted-foreground" />}
               error={errors.name?.message}
               {...register('name')}
-              className="bg-slate-950 border-slate-800 text-slate-200"
+              className="bg-background border-border text-foreground"
             />
 
             <Input
               label="Email Address"
               type="email"
-              placeholder="john@vsb.edu.in"
-              leftIcon={<Mail className="w-4 h-4 text-slate-500" />}
+              placeholder="john@vsbcetc.edu.in"
+              leftIcon={<Mail className="w-4 h-4 text-muted-foreground" />}
               error={errors.email?.message}
               {...register('email')}
-              className="bg-slate-950 border-slate-800 text-slate-200"
+              className="bg-background border-border text-foreground"
             />
           </div>
 
@@ -255,35 +285,35 @@ export default function RegisterPage() {
               label="Password"
               type={showPassword ? 'text' : 'password'}
               placeholder="Min. 6 characters"
-              leftIcon={<Lock className="w-4 h-4 text-slate-500" />}
+              leftIcon={<Lock className="w-4 h-4 text-muted-foreground" />}
               rightIcon={
-                <button type="button" onClick={() => setShowPassword(!showPassword)} className="text-slate-500 hover:text-slate-300">
+                <button type="button" onClick={() => setShowPassword(!showPassword)} className="text-muted-foreground hover:text-muted-foreground">
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               }
               error={errors.password?.message}
               {...register('password')}
-              className="bg-slate-950 border-slate-800 text-slate-200"
+              className="bg-background border-border text-foreground"
             />
 
             <Input
               label="Confirm Password"
               type="password"
               placeholder="Re-enter password"
-              leftIcon={<Lock className="w-4 h-4 text-slate-500" />}
+              leftIcon={<Lock className="w-4 h-4 text-muted-foreground" />}
               error={errors.confirmPassword?.message}
               {...register('confirmPassword')}
-              className="bg-slate-950 border-slate-800 text-slate-200"
+              className="bg-background border-border text-foreground"
             />
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-slate-300">Role selection</label>
+            <label className="text-sm font-medium text-muted-foreground">Role selection</label>
             <div className="grid grid-cols-2 gap-3">
               {(['STUDENT', 'FACULTY'] as const).map((role) => (
-                <label key={role} className="flex items-center gap-2 border border-slate-800 rounded-lg px-4 py-3 cursor-pointer has-[:checked]:border-primary has-[:checked]:bg-primary/5 transition-colors">
+                <label key={role} className="flex items-center gap-2 border border-border rounded-lg px-4 py-3 cursor-pointer has-[:checked]:border-primary has-[:checked]:bg-primary/5 transition-colors">
                   <input type="radio" value={role} {...register('role')} className="text-primary" />
-                  <span className="text-sm font-medium text-slate-300 capitalize">{role.toLowerCase()}</span>
+                  <span className="text-sm font-medium text-muted-foreground capitalize">{role.toLowerCase()}</span>
                 </label>
               ))}
             </div>
@@ -297,15 +327,15 @@ export default function RegisterPage() {
                 placeholder="922521104001"
                 error={errors.registerNumber?.message}
                 {...register('registerNumber')}
-                className="bg-slate-950 border-slate-800 text-slate-200"
+                className="bg-background border-border text-foreground"
               />
 
               <div className="grid grid-cols-3 gap-3">
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-sm font-medium text-slate-300">Department</label>
+                  <label className="text-sm font-medium text-muted-foreground">Department</label>
                   <select
                     {...register('departmentId')}
-                    className="flex h-9 w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-300 focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-colors"
+                    className="flex h-9 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-colors"
                   >
                     <option value="">Select</option>
                     {departments.map((d) => (
@@ -316,10 +346,10 @@ export default function RegisterPage() {
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-sm font-medium text-slate-300">Batch</label>
+                  <label className="text-sm font-medium text-muted-foreground">Batch</label>
                   <select
                     {...register('batchId')}
-                    className="flex h-9 w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-300 focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-colors"
+                    className="flex h-9 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-colors"
                   >
                     <option value="">Select</option>
                     {batches.map((b) => (
@@ -330,10 +360,10 @@ export default function RegisterPage() {
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-sm font-medium text-slate-300">Section</label>
+                  <label className="text-sm font-medium text-muted-foreground">Section</label>
                   <select
                     {...register('sectionId')}
-                    className="flex h-9 w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-300 focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-colors"
+                    className="flex h-9 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-colors"
                   >
                     <option value="">Select</option>
                     {sections.map((s) => (
@@ -352,7 +382,7 @@ export default function RegisterPage() {
                   placeholder="EMP-1002"
                   error={errors.employeeId?.message}
                   {...register('employeeId')}
-                  className="bg-slate-950 border-slate-800 text-slate-200"
+                  className="bg-background border-border text-foreground"
                 />
 
                 <Input
@@ -360,15 +390,15 @@ export default function RegisterPage() {
                   placeholder="Assistant Professor"
                   error={errors.designation?.message}
                   {...register('designation')}
-                  className="bg-slate-950 border-slate-800 text-slate-200"
+                  className="bg-background border-border text-foreground"
                 />
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <label className="text-sm font-medium text-slate-300">Department</label>
+                <label className="text-sm font-medium text-muted-foreground">Department</label>
                 <select
                   {...register('departmentId')}
-                  className="flex h-9 w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-300 focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-colors"
+                  className="flex h-9 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-colors"
                 >
                   <option value="">Select Department</option>
                   {departments.map((d) => (
@@ -381,7 +411,7 @@ export default function RegisterPage() {
           )}
 
           {/* LeetCode Username link validation */}
-          <div className="border border-slate-800 bg-slate-950/30 rounded-xl p-4 space-y-3">
+          <div className="border border-border bg-muted/50 rounded-xl p-4 space-y-3">
             <label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-1.5">
               <Sparkles className="w-3.5 h-3.5 text-primary" /> LeetCode Integration
             </label>
@@ -392,14 +422,14 @@ export default function RegisterPage() {
                   placeholder="LeetCode username"
                   value={lcUsername}
                   onChange={(e) => handleLcUsernameChange(e.target.value)}
-                  className="flex h-9 w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-200 placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-ring transition-colors"
+                  className="flex h-9 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring transition-colors"
                 />
               </div>
               <Button
                 type="button"
                 onClick={handleVerifyUsername}
                 disabled={lcState === 'checking'}
-                className="h-9 px-4 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs border border-slate-700"
+                className="h-9 px-4 bg-slate-800 hover:bg-slate-700 text-foreground text-xs border border-input"
               >
                 {lcState === 'checking' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Verify'}
               </Button>
@@ -458,7 +488,7 @@ export default function RegisterPage() {
           </Button>
         </form>
 
-        <p className="text-center text-sm text-slate-400 mt-6">
+        <p className="text-center text-sm text-muted-foreground mt-6">
           Already have an account?{' '}
           <Link to="/login" className="text-primary font-medium hover:underline">Sign in</Link>
         </p>

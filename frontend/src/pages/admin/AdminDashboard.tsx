@@ -3,9 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import { SolvedAreaChart, DifficultyBarChart, DifficultyPieChart } from '@/components/charts/Charts'
-import { DataTable } from '@/components/tables/DataTable'
 import { DashboardSkeleton } from '@/components/shared/Skeleton'
 import { adminService } from '@/services/admin.service'
 import { useToast } from '@/hooks/use-toast'
@@ -17,16 +15,15 @@ import {
   Code2,
   BarChart3,
   ShieldCheck,
-  Zap,
   Building2,
   Layers,
   FolderOpen,
-  CalendarDays,
   Plus,
   Send,
   RefreshCw,
   Download,
   FileSpreadsheet,
+  Clock,
 } from 'lucide-react'
 
 const containerVariants = {
@@ -43,9 +40,11 @@ export default function AdminDashboard() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
 
-  const { data, isLoading, error } = useQuery({
+  const { data, isLoading, error, dataUpdatedAt } = useQuery({
     queryKey: ['adminDashboardStats'],
     queryFn: () => adminService.getDashboardStats(),
+    refetchInterval: 60000, // Auto-refresh every 60 seconds for real-time sync
+    staleTime: 30000, // Consider data stale after 30 seconds
   })
 
   const syncMutation = useMutation({
@@ -106,6 +105,8 @@ export default function AdminDashboard() {
     { label: 'Send Alert', icon: <Send className="w-4 h-4" />, onClick: () => navigate('/admin/notifications') },
   ]
 
+  const lastUpdated = dataUpdatedAt ? new Date(dataUpdatedAt) : null
+
   return (
     <motion.div variants={containerVariants} initial="hidden" animate="show" className="space-y-6">
       {/* Header */}
@@ -113,6 +114,12 @@ export default function AdminDashboard() {
         <div>
           <h1 className="text-2xl font-bold">Admin Console</h1>
           <p className="text-muted-foreground text-sm mt-1">Institutional LeetCode Performance Analytics & Management</p>
+          {lastUpdated && (
+            <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1.5">
+              <Clock className="w-3 h-3" />
+              Last updated: {lastUpdated.toLocaleTimeString()} · Auto-refreshes every minute
+            </p>
+          )}
         </div>
         <Button
           onClick={() => syncMutation.mutate()}
@@ -127,7 +134,7 @@ export default function AdminDashboard() {
       <motion.div variants={itemVariants}>
         <Card className="border-primary/20 bg-primary/5">
           <CardHeader className="pb-3">
-            <CardTitle className="text-xs font-semibold uppercase tracking-wider text-slate-500">Quick Actions Portal</CardTitle>
+            <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Quick Actions Portal</CardTitle>
           </CardHeader>
           <CardContent className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3">
             {quickActions.map((action) => (
@@ -243,8 +250,8 @@ export default function AdminDashboard() {
           <CardContent className="grid grid-cols-1 md:grid-cols-4 gap-4">
             {[
               { label: 'API Server', status: 'Online', ok: true },
-              { label: 'Database', status: 'Connected', ok: true },
-              { label: 'LeetCode Sync Engine', status: 'Running', ok: true },
+              { label: 'Database', status: stats.totalStudents >= 0 ? 'Connected' : 'Error', ok: stats.totalStudents >= 0 },
+              { label: 'LeetCode Sync Engine', status: stats.totalWithProfile > 0 ? `${stats.totalWithProfile} Profiles Tracked` : 'No Profiles', ok: true },
               { label: 'Cron Scheduler', status: 'Active (Daily 2:00 AM)', ok: true },
             ].map((item) => (
               <div key={item.label} className="flex items-center justify-between p-3 border border-border rounded-lg bg-slate-50/5">
@@ -261,3 +268,4 @@ export default function AdminDashboard() {
     </motion.div>
   )
 }
+

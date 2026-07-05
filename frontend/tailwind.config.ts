@@ -25,18 +25,18 @@ export default {
         background: 'hsl(var(--background))',
         foreground: 'hsl(var(--foreground))',
         primary: {
-          DEFAULT: '#2563EB',
+          DEFAULT: '#E31E24', // VSB Red
           foreground: '#ffffff',
-          50: '#EFF6FF',
-          100: '#DBEAFE',
-          200: '#BFDBFE',
-          300: '#93C5FD',
-          400: '#60A5FA',
-          500: '#3B82F6',
-          600: '#2563EB',
-          700: '#1D4ED8',
-          800: '#1E40AF',
-          900: '#1E3A8A',
+          50: '#FDE8E9',
+          100: '#FCD1D3',
+          200: '#F8A3A6',
+          300: '#F47579',
+          400: '#F0474C',
+          500: '#E31E24',
+          600: '#B6181D',
+          700: '#881216',
+          800: '#5B0C0E',
+          900: '#2D0607',
         },
         secondary: {
           DEFAULT: '#0F172A',
@@ -78,11 +78,11 @@ export default {
           foreground: 'hsl(var(--card-foreground))',
         },
         sidebar: {
-          DEFAULT: '#0F172A',
-          foreground: '#94A3B8',
-          active: '#2563EB',
-          'active-bg': '#1E3A8A',
-          hover: '#1E293B',
+          DEFAULT: '#283593', // VSB Navy text color
+          foreground: '#C5CAE9',
+          active: '#E31E24', // Red for active item
+          'active-bg': '#E31E24',
+          hover: '#303F9F',
         },
       },
       borderRadius: {

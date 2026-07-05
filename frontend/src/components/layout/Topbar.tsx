@@ -15,6 +15,7 @@ import {
   UserCircle,
 } from 'lucide-react'
 import { useState } from 'react'
+import { motion } from 'framer-motion'
 
 function Breadcrumbs() {
   const location = useLocation()
@@ -97,11 +98,16 @@ function UserMenu({ user, logout }: { user: { name: string; email: string; role:
 }
 
 export function Topbar() {
-  const { openNotifications, openCommandPalette } = useUIStore()
+  const { openNotifications, openCommandPalette, sidebarCollapsed } = useUIStore()
   const { user, logout } = useAuth()
 
   return (
-    <header className="fixed top-0 right-0 left-0 h-16 bg-background/95 backdrop-blur border-b border-border z-30 flex items-center px-4 gap-4">
+    <motion.header 
+      initial={false}
+      animate={{ left: sidebarCollapsed ? 64 : 256 }}
+      transition={{ duration: 0.25, ease: 'easeInOut' }}
+      className="fixed top-0 right-0 h-16 bg-card backdrop-blur border-b border-border z-30 flex items-center px-4 gap-4"
+    >
       {/* Left: breadcrumbs */}
       <div className="flex-1">
         <Breadcrumbs />
@@ -134,6 +140,6 @@ export function Topbar() {
           logout={logout}
         />
       </div>
-    </header>
+    </motion.header>
   )
 }

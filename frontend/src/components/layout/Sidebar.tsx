@@ -95,29 +95,28 @@ export function Sidebar() {
       initial={false}
       animate={{ width: sidebarCollapsed ? 64 : 256 }}
       transition={{ duration: 0.25, ease: 'easeInOut' }}
-      className="fixed left-0 top-0 h-screen bg-[#0F172A] flex flex-col z-40 shadow-sidebar overflow-hidden"
+      className="fixed left-0 top-0 h-screen bg-sidebar flex flex-col z-40 shadow-sidebar overflow-hidden"
     >
       {/* Logo */}
-      <div className="h-16 flex items-center px-4 gap-3 border-b border-white/10 shrink-0">
-        <div
-          className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center shrink-0 cursor-pointer"
-          onClick={() => navigate('/')}
-        >
-          <Code2 className="w-5 h-5 text-white" />
+      <div className="h-16 shrink-0 border-b border-white/10">
+        <div className="flex items-center h-full px-4 gap-3">
+          <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center shrink-0 cursor-pointer overflow-hidden shadow-sm" onClick={() => navigate('/')}>
+            <img src="/logo.png" alt="VSBCETC Logo" className="w-full h-full object-cover" onError={(e) => { e.currentTarget.style.display = 'none' }} />
+          </div>
+          <AnimatePresence>
+            {!sidebarCollapsed && (
+              <motion.div
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -10 }}
+                transition={{ duration: 0.15 }}
+              >
+                <p className="text-white font-bold text-sm leading-tight">VSBCETC LeetCode</p>
+                <p className="text-sidebar-foreground text-xs">Analytics Dashboard</p>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
-        <AnimatePresence>
-          {!sidebarCollapsed && (
-            <motion.div
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -10 }}
-              transition={{ duration: 0.15 }}
-            >
-              <p className="text-white font-bold text-sm leading-tight">VSB LeetCode</p>
-              <p className="text-slate-400 text-xs">Analytics Dashboard</p>
-            </motion.div>
-          )}
-        </AnimatePresence>
       </div>
 
       {/* Role label */}

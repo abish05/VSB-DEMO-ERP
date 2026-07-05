@@ -13,9 +13,22 @@ export interface LeetCodeCheckResult {
   message: string
 }
 
+export interface DevLoginResponse {
+  token: string
+  user: UserProfile
+}
+
 export const authService = {
-  async getCurrentUser(): Promise<UserProfile> {
-    const { data } = await apiClient.get('/auth/me')
+  async getCurrentUser(token?: string): Promise<UserProfile> {
+    const headers: Record<string, string> = {
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0'
+    }
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`
+    }
+    const { data } = await apiClient.get(`/auth/me?_t=${Date.now()}`, { headers })
     return data
   },
 
@@ -49,6 +62,11 @@ export const authService = {
 
   async updateProfile(payload: Partial<UserProfile>): Promise<UserProfile> {
     const { data } = await apiClient.put('/auth/profile', payload)
+    return data
+  },
+
+  async devLogin(payload: { email: string; password: string }): Promise<DevLoginResponse> {
+    const { data } = await apiClient.post('/auth/dev-login', payload)
     return data
   },
 }

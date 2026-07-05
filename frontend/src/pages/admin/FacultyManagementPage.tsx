@@ -195,25 +195,25 @@ export default function FacultyManagementPage() {
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-6 shadow-2xl relative"
+            className="bg-card border border-border rounded-2xl w-full max-w-md p-6 shadow-2xl relative"
           >
-            <button onClick={closeModal} className="absolute top-4 right-4 text-slate-500 hover:text-slate-300">
+            <button onClick={closeModal} className="absolute top-4 right-4 text-muted-foreground hover:text-muted-foreground">
               <X className="w-5 h-5" />
             </button>
-            <h2 className="text-lg font-bold text-slate-200 mb-4">{editingFaculty ? 'Edit Faculty Member' : 'Add Faculty Member'}</h2>
+            <h2 className="text-lg font-bold text-foreground mb-4">{editingFaculty ? 'Edit Faculty Member' : 'Add Faculty Member'}</h2>
             <form onSubmit={handleSave} className="space-y-4">
-              <Input label="Full Name" value={name} onChange={(e) => setName(e.target.value)} required placeholder="Dr. Priya Nair" className="bg-slate-950 border-slate-800" />
-              <Input label="Email Address" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="priya@vsb.edu.in" className="bg-slate-950 border-slate-800" />
+              <Input label="Full Name" value={name} onChange={(e) => setName(e.target.value)} required placeholder="Dr. Priya Nair" className="bg-background border-border" />
+              <Input label="Email Address" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="priya@vsb.edu.in" className="bg-background border-border" />
 
               <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-semibold text-slate-400">Department</label>
-                <select value={departmentId} onChange={(e) => setDepartmentId(e.target.value)} className="bg-slate-950 border border-slate-800 rounded-lg h-10 px-3 text-sm focus:outline-none focus:border-primary">
+                <label className="text-xs font-semibold text-muted-foreground">Department</label>
+                <select value={departmentId} onChange={(e) => setDepartmentId(e.target.value)} className="bg-background border border-border rounded-lg h-10 px-3 text-sm focus:outline-none focus:border-primary">
                   {depts?.map((d) => <option key={d.id} value={d.id}>{d.name} ({d.code})</option>)}
                 </select>
               </div>
 
               <div className="flex gap-3 justify-end pt-4">
-                <Button type="button" variant="outline" onClick={closeModal} className="border-slate-800 text-slate-400 hover:bg-slate-800">Cancel</Button>
+                <Button type="button" variant="outline" onClick={closeModal} className="border-border text-muted-foreground hover:bg-slate-800">Cancel</Button>
                 <Button type="submit" isLoading={createMutation.isPending || updateMutation.isPending}>Save Profile</Button>
               </div>
             </form>

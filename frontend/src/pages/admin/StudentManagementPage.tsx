@@ -10,7 +10,7 @@ import { Avatar } from '@/components/ui/avatar'
 import { getInitials } from '@/lib/utils'
 import { adminService } from '@/services/admin.service'
 import { useToast } from '@/hooks/use-toast'
-import { Plus, Users, Pencil, Trash2, FileSpreadsheet, X, Search, Info } from 'lucide-react'
+import { Plus, Users, Pencil, Trash2, FileSpreadsheet, X, Search, Info, RefreshCw } from 'lucide-react'
 
 const containerVariants = { hidden: {}, show: { transition: { staggerChildren: 0.07 } } }
 const itemVariants = { hidden: { opacity: 0, y: 16 }, show: { opacity: 1, y: 0, transition: { duration: 0.35 } } }
@@ -82,6 +82,17 @@ export default function StudentManagementPage() {
     },
     onError: (err: any) => {
       toast({ title: 'Action Failed', description: err?.response?.data?.message || 'Failed to delete student.', variant: 'destructive' })
+    }
+  })
+
+  const syncMutation = useMutation({
+    mutationFn: (userId: string) => adminService.syncUser(userId),
+    onSuccess: () => {
+      toast({ title: 'Sync Triggered', description: 'LeetCode data sync started in background. Refresh in a minute.' })
+      setTimeout(() => queryClient.invalidateQueries({ queryKey: ['adminStudents'] }), 5000)
+    },
+    onError: (err: any) => {
+      toast({ title: 'Sync Failed', description: err?.response?.data?.message || 'Failed to trigger sync.', variant: 'destructive' })
     }
   })
 
@@ -232,7 +243,7 @@ export default function StudentManagementPage() {
                 {
                   key: 'section',
                   label: 'Section',
-                  render: (r: any) => <span className="text-xs font-semibold text-slate-400">Class {r.section?.name || '—'}</span>,
+                  render: (r: any) => <span className="text-xs font-semibold text-muted-foreground">Class {r.section?.name || '—'}</span>,
                 },
                 {
                   key: 'leetcode',
@@ -244,7 +255,7 @@ export default function StudentManagementPage() {
                         <span className="text-xs text-muted-foreground">({r.leetcodeProfile.totalSolved} solved)</span>
                       </div>
                     ) : (
-                      <span className="text-xs text-slate-500 italic">Unlinked</span>
+                      <span className="text-xs text-muted-foreground italic">Unlinked</span>
                     ),
                 },
                 {
@@ -252,6 +263,18 @@ export default function StudentManagementPage() {
                   label: 'Actions',
                   render: (r: any) => (
                     <div className="flex items-center gap-1">
+                      {r.leetcodeProfile && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-primary hover:text-primary"
+                          title="Sync LeetCode data"
+                          onClick={() => syncMutation.mutate(r.id)}
+                          disabled={syncMutation.isPending}
+                        >
+                          <RefreshCw className="w-3.5 h-3.5" />
+                        </Button>
+                      )}
                       <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditModal(r)}>
                         <Pencil className="w-3.5 h-3.5" />
                       </Button>
@@ -275,40 +298,40 @@ export default function StudentManagementPage() {
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-6 shadow-2xl relative"
+            className="bg-card border border-border rounded-2xl w-full max-w-md p-6 shadow-2xl relative"
           >
-            <button onClick={closeModal} className="absolute top-4 right-4 text-slate-500 hover:text-slate-300">
+            <button onClick={closeModal} className="absolute top-4 right-4 text-muted-foreground hover:text-muted-foreground">
               <X className="w-5 h-5" />
             </button>
-            <h2 className="text-lg font-bold text-slate-200 mb-4">{editingStudent ? 'Edit Student Profile' : 'Add New Student'}</h2>
+            <h2 className="text-lg font-bold text-foreground mb-4">{editingStudent ? 'Edit Student Profile' : 'Add New Student'}</h2>
             <form onSubmit={handleSave} className="space-y-4">
-              <Input label="Student Name" value={name} onChange={(e) => setName(e.target.value)} required placeholder="John Doe" className="bg-slate-950 border-slate-800" />
-              <Input label="Email Address" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="john@vsb.edu.in" className="bg-slate-950 border-slate-800" />
-              <Input label="LeetCode Username" value={leetcodeUsername} onChange={(e) => setLeetcodeUsername(e.target.value)} placeholder="leetcode_username" className="bg-slate-950 border-slate-800" />
+              <Input label="Student Name" value={name} onChange={(e) => setName(e.target.value)} required placeholder="John Doe" className="bg-background border-border" />
+              <Input label="Email Address" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="john@vsb.edu.in" className="bg-background border-border" />
+              <Input label="LeetCode Username" value={leetcodeUsername} onChange={(e) => setLeetcodeUsername(e.target.value)} placeholder="leetcode_username" className="bg-background border-border" />
 
               <div className="grid grid-cols-3 gap-3">
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-semibold text-slate-400">Department</label>
-                  <select value={departmentId} onChange={(e) => setDepartmentId(e.target.value)} className="bg-slate-950 border border-slate-800 rounded-lg h-10 px-3 text-sm focus:outline-none focus:border-primary">
+                  <label className="text-xs font-semibold text-muted-foreground">Department</label>
+                  <select value={departmentId} onChange={(e) => setDepartmentId(e.target.value)} className="bg-background border border-border rounded-lg h-10 px-3 text-sm focus:outline-none focus:border-primary">
                     {depts?.map((d) => <option key={d.id} value={d.id}>{d.code}</option>)}
                   </select>
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-semibold text-slate-400">Batch</label>
-                  <select value={batchId} onChange={(e) => setBatchId(e.target.value)} className="bg-slate-950 border border-slate-800 rounded-lg h-10 px-3 text-sm focus:outline-none focus:border-primary">
+                  <label className="text-xs font-semibold text-muted-foreground">Batch</label>
+                  <select value={batchId} onChange={(e) => setBatchId(e.target.value)} className="bg-background border border-border rounded-lg h-10 px-3 text-sm focus:outline-none focus:border-primary">
                     {batches?.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
                   </select>
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-semibold text-slate-400">Section</label>
-                  <select value={sectionId} onChange={(e) => setSectionId(e.target.value)} className="bg-slate-950 border border-slate-800 rounded-lg h-10 px-3 text-sm focus:outline-none focus:border-primary">
+                  <label className="text-xs font-semibold text-muted-foreground">Section</label>
+                  <select value={sectionId} onChange={(e) => setSectionId(e.target.value)} className="bg-background border border-border rounded-lg h-10 px-3 text-sm focus:outline-none focus:border-primary">
                     {sections?.filter(s => s.batchId === batchId || !batchId).map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
                   </select>
                 </div>
               </div>
 
               <div className="flex gap-3 justify-end pt-4">
-                <Button type="button" variant="outline" onClick={closeModal} className="border-slate-800 text-slate-400 hover:bg-slate-800">Cancel</Button>
+                <Button type="button" variant="outline" onClick={closeModal} className="border-border text-muted-foreground hover:bg-slate-800">Cancel</Button>
                 <Button type="submit" isLoading={createMutation.isPending || updateMutation.isPending}>Save Profile</Button>
               </div>
             </form>
@@ -322,26 +345,26 @@ export default function StudentManagementPage() {
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-6 shadow-2xl relative"
+            className="bg-card border border-border rounded-2xl w-full max-w-md p-6 shadow-2xl relative"
           >
-            <button onClick={() => setIsCSVModalOpen(false)} className="absolute top-4 right-4 text-slate-500 hover:text-slate-300">
+            <button onClick={() => setIsCSVModalOpen(false)} className="absolute top-4 right-4 text-muted-foreground hover:text-muted-foreground">
               <X className="w-5 h-5" />
             </button>
-            <h2 className="text-lg font-bold text-slate-200 mb-2">Bulk Import Students</h2>
-            <p className="text-xs text-slate-400 mb-4">Upload a CSV containing student rosters.</p>
+            <h2 className="text-lg font-bold text-foreground mb-2">Bulk Import Students</h2>
+            <p className="text-xs text-muted-foreground mb-4">Upload a CSV containing student rosters.</p>
 
-            <div className="bg-slate-950 border border-slate-800 rounded-xl p-3 mb-4 space-y-2">
-              <div className="flex gap-2 text-xs text-slate-400">
+            <div className="bg-background border border-border rounded-xl p-3 mb-4 space-y-2">
+              <div className="flex gap-2 text-xs text-muted-foreground">
                 <Info className="w-4 h-4 text-primary shrink-0" />
                 <div>
-                  <p className="font-semibold text-slate-300">Required CSV Columns:</p>
-                  <p className="font-mono text-slate-500 mt-1">name, email, leetcodeUsername</p>
+                  <p className="font-semibold text-muted-foreground">Required CSV Columns:</p>
+                  <p className="font-mono text-muted-foreground mt-1">name, email, leetcodeUsername</p>
                 </div>
               </div>
             </div>
 
             <form onSubmit={handleCSVImport} className="space-y-4">
-              <div className="border border-dashed border-slate-800 rounded-xl p-6 text-center hover:border-slate-700 transition-colors cursor-pointer relative bg-slate-950/50">
+              <div className="border border-dashed border-border rounded-xl p-6 text-center hover:border-input transition-colors cursor-pointer relative bg-muted/50">
                 <input
                   type="file"
                   accept=".csv"
@@ -349,11 +372,11 @@ export default function StudentManagementPage() {
                   onChange={(e) => setCSVFile(e.target.files?.[0] || null)}
                   className="absolute inset-0 opacity-0 cursor-pointer"
                 />
-                <FileSpreadsheet className="w-8 h-8 text-slate-500 mx-auto mb-2" />
-                <p className="text-sm font-semibold text-slate-300">
+                <FileSpreadsheet className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+                <p className="text-sm font-semibold text-muted-foreground">
                   {csvFile ? csvFile.name : 'Select student roster CSV file'}
                 </p>
-                <p className="text-xs text-slate-500 mt-1">{csvFile ? `${(csvFile.size / 1024).toFixed(1)} KB` : 'Click or drag files here'}</p>
+                <p className="text-xs text-muted-foreground mt-1">{csvFile ? `${(csvFile.size / 1024).toFixed(1)} KB` : 'Click or drag files here'}</p>
               </div>
 
               {csvError && (
@@ -363,7 +386,7 @@ export default function StudentManagementPage() {
               )}
 
               <div className="flex gap-3 justify-end pt-2">
-                <Button type="button" variant="outline" onClick={() => setIsCSVModalOpen(false)} className="border-slate-800 text-slate-400 hover:bg-slate-800">Cancel</Button>
+                <Button type="button" variant="outline" onClick={() => setIsCSVModalOpen(false)} className="border-border text-muted-foreground hover:bg-slate-800">Cancel</Button>
                 <Button type="submit" isLoading={csvLoading}>Import Roster</Button>
               </div>
             </form>

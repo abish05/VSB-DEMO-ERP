@@ -70,28 +70,28 @@ export default function AdminNotificationsPage() {
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="Weekly LeetCode Leaderboard Update"
-                className="bg-slate-950 border-slate-800"
+                className="bg-background border-border"
               />
 
               <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-semibold text-slate-400">Notification Body Message</label>
+                <label className="text-xs font-semibold text-muted-foreground">Notification Body Message</label>
                 <textarea
                   required
                   rows={4}
                   value={body}
                   onChange={(e) => setBody(e.target.value)}
                   placeholder="Review this week's rankings! Keep solving to maintain your streaks..."
-                  className="w-full bg-slate-950 border border-slate-800 rounded-lg p-3 text-sm text-slate-100 focus:outline-none focus:border-primary placeholder-slate-600"
+                  className="w-full bg-background border border-border rounded-lg p-3 text-sm text-foreground focus:outline-none focus:border-primary placeholder:text-muted-foreground"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-semibold text-slate-400">Target Group</label>
+                  <label className="text-xs font-semibold text-muted-foreground">Target Group</label>
                   <select
                     value={targetRole}
                     onChange={(e) => setTargetRole(e.target.value)}
-                    className="bg-slate-950 border border-slate-800 rounded-lg h-10 px-3 text-sm focus:outline-none focus:border-primary"
+                    className="bg-background border border-border rounded-lg h-10 px-3 text-sm focus:outline-none focus:border-primary"
                   >
                     <option value="">All Institutional Users</option>
                     <option value="STUDENT">Only Students</option>
@@ -100,11 +100,11 @@ export default function AdminNotificationsPage() {
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-semibold text-slate-400">Alert Type</label>
+                  <label className="text-xs font-semibold text-muted-foreground">Alert Type</label>
                   <select
                     value={type}
                     onChange={(e) => setType(e.target.value)}
-                    className="bg-slate-950 border border-slate-800 rounded-lg h-10 px-3 text-sm focus:outline-none focus:border-primary"
+                    className="bg-background border border-border rounded-lg h-10 px-3 text-sm focus:outline-none focus:border-primary"
                   >
                     <option value="ANNOUNCEMENT">ANNOUNCEMENT</option>
                     <option value="ALERT">ALERT</option>
@@ -123,13 +123,13 @@ export default function AdminNotificationsPage() {
         </Card>
 
         {/* Broadcast Info */}
-        <Card className="md:col-span-1 bg-slate-900 border-slate-800">
+        <Card className="md:col-span-1 bg-card border-border">
           <CardHeader>
             <CardTitle className="text-sm font-semibold flex items-center gap-2">
               <ShieldAlert className="w-4 h-4 text-warning" /> Safety Guidance
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4 text-xs text-slate-400 leading-relaxed">
+          <CardContent className="space-y-4 text-xs text-muted-foreground leading-relaxed">
             <div className="flex gap-2">
               <Info className="w-4 h-4 text-primary shrink-0" />
               <p>Broadcasts will write immediately to target user notification collections.</p>

@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -5,26 +6,28 @@ import { Avatar } from '@/components/ui/avatar'
 import { DataTable } from '@/components/tables/DataTable'
 import { Trophy, Medal, Star, TrendingUp } from 'lucide-react'
 import { getInitials } from '@/lib/utils'
+import { leetcodeService } from '@/services/leetcode.service'
 
 const containerVariants = { hidden: {}, show: { transition: { staggerChildren: 0.07 } } }
 const itemVariants = { hidden: { opacity: 0, y: 16 }, show: { opacity: 1, y: 0, transition: { duration: 0.35 } } }
 
-const LEADERBOARD = [
-  { rank: 1, name: 'Sneha M', rollNo: '21CSE004', solved: 412, streak: 23, rating: 1678, dept: 'CSE', change: +2 },
-  { rank: 2, name: 'Arjun Kumar', rollNo: '21CSE001', solved: 324, streak: 15, rating: 1543, dept: 'CSE', change: 0 },
-  { rank: 3, name: 'Priya Devi', rollNo: '21CSE002', solved: 287, streak: 8, rating: 1412, dept: 'CSE', change: -1 },
-  { rank: 4, name: 'Mohammed Ali', rollNo: '21CSE006', solved: 478, streak: 12, rating: 1389, dept: 'CSE', change: +3 },
-  { rank: 5, name: 'Kavitha S', rollNo: '21IT001', solved: 265, streak: 5, rating: 1254, dept: 'IT', change: -2 },
-]
-
 const rankIcon = (rank: number) => {
   if (rank === 1) return <Medal className="w-5 h-5 text-yellow-500" />
-  if (rank === 2) return <Medal className="w-5 h-5 text-slate-400" />
+  if (rank === 2) return <Medal className="w-5 h-5 text-muted-foreground" />
   if (rank === 3) return <Medal className="w-5 h-5 text-amber-600" />
   return <span className="text-sm font-bold text-muted-foreground">#{rank}</span>
 }
 
 export default function LeaderboardPage() {
+  const [leaderboard, setLeaderboard] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    leetcodeService.getLeaderboard()
+      .then(setLeaderboard)
+      .catch(console.error)
+      .finally(() => setLoading(false))
+  }, [])
   return (
     <motion.div variants={containerVariants} initial="hidden" animate="show" className="space-y-6">
       <motion.div variants={itemVariants}>
@@ -34,7 +37,7 @@ export default function LeaderboardPage() {
 
       {/* Top 3 podium */}
       <motion.div variants={itemVariants} className="grid grid-cols-3 gap-4">
-        {LEADERBOARD.slice(0, 3).map((s) => (
+        {leaderboard.slice(0, 3).map((s) => (
           <Card key={s.rank} className={`text-center py-6 ${s.rank === 1 ? 'border-yellow-300/50 bg-yellow-50/50 dark:bg-yellow-900/10' : ''}`}>
             <CardContent className="space-y-3">
               <div className="flex justify-center">{rankIcon(s.rank)}</div>
@@ -62,7 +65,8 @@ export default function LeaderboardPage() {
           </CardHeader>
           <CardContent>
             <DataTable
-              data={LEADERBOARD}
+              data={leaderboard}
+              isLoading={loading}
               columns={[
                 { key: 'rank', label: 'Rank', render: (r) => (
                   <div className="flex items-center justify-center w-8">{rankIcon(r.rank as number)}</div>

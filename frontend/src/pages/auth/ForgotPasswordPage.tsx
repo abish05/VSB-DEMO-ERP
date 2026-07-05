@@ -38,11 +38,11 @@ export default function ForgotPasswordPage() {
         className="w-full max-w-md"
       >
         <div className="flex items-center gap-3 mb-8">
-          <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center">
-            <Code2 className="w-5 h-5 text-white" />
+          <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center shrink-0">
+            <Code2 className="w-4 h-4 text-white" />
           </div>
           <div>
-            <p className="font-bold">VSB LeetCode</p>
+            <p className="font-bold">VSBCETC LeetCode</p>
             <p className="text-xs text-muted-foreground">Analytics Dashboard</p>
           </div>
         </div>
@@ -68,7 +68,10 @@ export default function ForgotPasswordPage() {
             </p>
 
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-              <Input label="Email Address" type="email" placeholder="john@vsb.edu.in"
+              <Input 
+                label="Email Address" 
+                type="email" 
+                placeholder="john@vsbcetc.edu.in"
                 leftIcon={<Mail className="w-4 h-4" />} error={errors.email?.message}
                 {...register('email')} />
 

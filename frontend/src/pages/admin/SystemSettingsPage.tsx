@@ -48,43 +48,43 @@ export default function SystemSettingsPage() {
           <CardContent>
             <form onSubmit={handleSave} className="space-y-5">
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-400">LeetCode Sync Frequency</label>
+                <label className="text-xs font-semibold text-muted-foreground">LeetCode Sync Frequency</label>
                 <select
                   value={syncInterval}
                   onChange={(e) => setSyncInterval(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-lg h-10 px-3 text-sm focus:outline-none focus:border-primary"
+                  className="w-full bg-background border border-input rounded-lg h-10 px-3 text-sm focus:outline-none focus:border-primary text-foreground"
                 >
-                  <option value="2">Every 2 Hours (High load)</option>
+                  <option value="12h">Every 12 Hours (Recommended)</option>
                   <option value="6">Every 6 Hours</option>
                   <option value="12">Every 12 Hours (Recommended)</option>
                   <option value="24">Daily (2:00 AM)</option>
                 </select>
-                <p className="text-[11px] text-slate-500">Determines how often the server queries LeetCode GraphQL endpoints.</p>
+                <p className="text-[11px] text-muted-foreground">Determines how often the server queries LeetCode GraphQL endpoints.</p>
               </div>
 
-              <div className="flex items-center justify-between p-3 border border-slate-800 rounded-lg bg-slate-950/20">
+              <div className="flex items-center justify-between p-3 border border-input rounded-lg bg-background/50">
                 <div>
-                  <p className="text-sm font-semibold text-slate-200">Advisory Alerts</p>
-                  <p className="text-xs text-slate-500 mt-0.5">Alert advisors when student streaks fall to zero</p>
+                  <p className="text-sm font-semibold text-foreground">Advisory Alerts</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">Alert advisors when student streaks fall to zero</p>
                 </div>
                 <input
                   type="checkbox"
                   checked={emailAlerts}
                   onChange={(e) => setEmailAlerts(e.target.checked)}
-                  className="rounded border-slate-800 bg-slate-950 text-primary focus:ring-primary h-4.5 w-4.5"
+                  className="rounded border-border bg-background text-primary focus:ring-primary h-4.5 w-4.5"
                 />
               </div>
 
-              <div className="flex items-center justify-between p-3 border border-slate-800 rounded-lg bg-slate-950/20">
+              <div className="flex items-center justify-between p-3 border border-input rounded-lg bg-background/50">
                 <div>
-                  <p className="text-sm font-semibold text-slate-200">Maintenance Lock</p>
-                  <p className="text-xs text-slate-500 mt-0.5">Restrict client dashboard login access</p>
+                  <p className="text-sm font-semibold text-foreground">Maintenance Lock</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">Restrict client dashboard login access</p>
                 </div>
                 <input
                   type="checkbox"
                   checked={maintenanceMode}
                   onChange={(e) => setMaintenanceMode(e.target.checked)}
-                  className="rounded border-slate-800 bg-slate-950 text-primary focus:ring-primary h-4.5 w-4.5"
+                  className="rounded border-border bg-background text-primary focus:ring-primary h-4.5 w-4.5"
                 />
               </div>
 
@@ -104,18 +104,18 @@ export default function SystemSettingsPage() {
                 <ShieldCheck className="w-4 h-4 text-success" /> Server Information
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3.5 text-xs text-slate-300">
+            <CardContent className="space-y-3.5 text-xs text-muted-foreground">
               <div className="flex justify-between border-b border-border pb-2">
-                <span className="text-slate-500 font-semibold">Running Mode</span>
+                <span className="text-muted-foreground font-semibold">Running Mode</span>
                 <Badge variant="success">DEVELOPMENT</Badge>
               </div>
               <div className="flex justify-between border-b border-border pb-2">
-                <span className="text-slate-500 font-semibold">Mock Database</span>
+                <span className="text-muted-foreground font-semibold">Mock Database</span>
                 <Badge variant="outline" className="border-indigo-500/30 text-indigo-400">ENABLED (In-Memory)</Badge>
               </div>
               <div className="flex justify-between border-b border-border pb-2">
-                <span className="text-slate-500 font-semibold">API Version</span>
-                <span className="font-mono text-slate-400">v1.0.0-mock</span>
+                <span className="text-muted-foreground font-semibold">API Version</span>
+                <span className="font-mono text-muted-foreground">v1.0.0-mock</span>
               </div>
             </CardContent>
           </Card>

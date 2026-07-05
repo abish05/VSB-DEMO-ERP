@@ -55,4 +55,9 @@ export const leetcodeService = {
     const { data } = await apiClient.get(`/leetcode/check/${username}`)
     return data
   },
+
+  async getLeaderboard(): Promise<any[]> {
+    const { data } = await apiClient.get('/leetcode/leaderboard')
+    return data
+  },
 }

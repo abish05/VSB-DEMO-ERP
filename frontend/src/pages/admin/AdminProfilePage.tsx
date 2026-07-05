@@ -87,11 +87,11 @@ export default function AdminProfilePage() {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSaveProfile} className="space-y-4">
-              <div className="flex items-center gap-4 border-b border-slate-800 pb-4">
+              <div className="flex items-center gap-4 border-b border-border pb-4">
                 <Avatar fallback={getInitials(user?.name || 'A')} size="lg" />
                 <div>
-                  <h3 className="text-sm font-bold text-slate-200">{user?.name}</h3>
-                  <p className="text-xs text-slate-400 mt-1">{user?.email}</p>
+                  <h3 className="text-sm font-bold text-foreground">{user?.name}</h3>
+                  <p className="text-xs text-muted-foreground mt-1">{user?.email}</p>
                 </div>
               </div>
 
@@ -101,7 +101,7 @@ export default function AdminProfilePage() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Admin Name"
-                className="bg-slate-950 border-slate-800"
+                className="bg-background border-border"
               />
 
               <div className="flex justify-end pt-2">
@@ -128,7 +128,7 @@ export default function AdminProfilePage() {
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="bg-slate-950 border-slate-800"
+                  className="bg-background border-border"
                 />
 
                 <Input
@@ -138,7 +138,7 @@ export default function AdminProfilePage() {
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="bg-slate-950 border-slate-800"
+                  className="bg-background border-border"
                 />
 
                 <Button type="submit" isLoading={loadingPassword} className="w-full text-xs">
@@ -149,13 +149,13 @@ export default function AdminProfilePage() {
           </Card>
 
           {/* Security alert */}
-          <Card className="bg-slate-900 border-slate-800">
+          <Card className="bg-card border-border">
             <CardHeader>
               <CardTitle className="text-sm font-semibold flex items-center gap-2">
                 <ShieldAlert className="w-4 h-4 text-warning" /> Security Notice
               </CardTitle>
             </CardHeader>
-            <CardContent className="text-xs text-slate-400 leading-relaxed">
+            <CardContent className="text-xs text-muted-foreground leading-relaxed">
               Updating passwords requires recent authentication context. If you receive an error, log out of the admin portal and log back in before retrying.
             </CardContent>
           </Card>

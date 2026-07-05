@@ -2,6 +2,8 @@ import axios from 'axios'
 import { logger } from '@/middleware/errorHandler'
 
 const LEETCODE_GRAPHQL = 'https://leetcode.com/graphql'
+const LEETCODE_FALLBACK_PROFILE = 'https://alfa-leetcode-api.onrender.com'
+const LEETCODE_FALLBACK_STATS = 'https://leetcode-api-faisalshohag.vercel.app'
 
 const client = axios.create({
   baseURL: LEETCODE_GRAPHQL,
@@ -33,6 +35,86 @@ export interface LeetCodeStats {
     statusDisplay: string
     lang: string
   }>
+}
+
+type FallbackUserProfile = {
+  username?: string
+  name?: string | null
+  avatar?: string | null
+  country?: string | null
+  reputation?: number | null
+  ranking?: number | null
+}
+
+type FallbackStats = {
+  errors?: unknown[]
+  totalSolved?: number
+  easySolved?: number
+  mediumSolved?: number
+  hardSolved?: number
+  ranking?: number | null
+  reputation?: number | null
+  submissionCalendar?: Record<string, number>
+  recentSubmissions?: Array<{
+    title: string
+    titleSlug: string
+    timestamp: string
+    statusDisplay: string
+    lang: string
+  }>
+  matchedUserStats?: {
+    acSubmissionNum?: Array<{ difficulty: string; count: number; submissions?: number }>
+    totalSubmissionNum?: Array<{ difficulty: string; count: number; submissions?: number }>
+  }
+  totalSubmissions?: Array<{ difficulty: string; count: number; submissions?: number }>
+}
+
+function toSlug(title: string) {
+  return title
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '')
+}
+
+function isNotFoundFallback(data: FallbackStats) {
+  return Array.isArray(data.errors) || typeof data.totalSolved !== 'number'
+}
+
+async function fetchFallbackUserStats(username: string): Promise<LeetCodeStats> {
+  const encoded = encodeURIComponent(username)
+  const [profileResult, statsResult] = await Promise.allSettled([
+    axios.get<FallbackUserProfile>(`${LEETCODE_FALLBACK_PROFILE}/${encoded}`, { timeout: 15000 }),
+    axios.get<FallbackStats>(`${LEETCODE_FALLBACK_STATS}/${encoded}`, { timeout: 15000 }),
+  ])
+
+  if (statsResult.status !== 'fulfilled') {
+    throw statsResult.reason
+  }
+
+  const stats = statsResult.value.data
+  if (isNotFoundFallback(stats)) {
+    throw new Error(`LeetCode user not found: ${username}`)
+  }
+
+  const profile = profileResult.status === 'fulfilled' ? profileResult.value.data : null
+  const totalSubmissions = stats.totalSubmissions?.find((s) => s.difficulty === 'All')?.submissions || 0
+  const totalAccepted = stats.matchedUserStats?.acSubmissionNum?.find((s) => s.difficulty === 'All')?.count || stats.totalSolved || 0
+
+  return {
+    username: profile?.username || username,
+    displayName: profile?.name || profile?.username || username,
+    avatar: profile?.avatar || null,
+    country: profile?.country || null,
+    reputation: profile?.reputation ?? stats.reputation ?? null,
+    totalSolved: stats.totalSolved || 0,
+    easySolved: stats.easySolved || 0,
+    mediumSolved: stats.mediumSolved || 0,
+    hardSolved: stats.hardSolved || 0,
+    acceptanceRate: totalSubmissions > 0 ? Number(((totalAccepted / totalSubmissions) * 100).toFixed(2)) : 0,
+    ranking: stats.ranking ?? profile?.ranking ?? null,
+    submissionCalendar: stats.submissionCalendar || {},
+    recentSubmissions: stats.recentSubmissions || [],
+  }
 }
 
 export interface ContestInfo {
@@ -110,8 +192,13 @@ export async function fetchUserStats(username: string): Promise<LeetCodeStats> {
       recentSubmissions: data?.data?.recentSubmissionList || [],
     }
   } catch (err) {
-    logger.error(`Failed to fetch LeetCode stats for ${username}`, err)
-    throw err
+    logger.warn(`LeetCode GraphQL stats failed for ${username}; trying fallback provider`)
+    try {
+      return await fetchFallbackUserStats(username)
+    } catch (fallbackErr) {
+      logger.error(`Failed to fetch LeetCode stats for ${username}`, fallbackErr)
+      throw fallbackErr
+    }
   }
 }
 
@@ -154,8 +241,34 @@ export async function fetchContestHistory(username: string): Promise<ContestInfo
         }
       })
   } catch (err) {
-    logger.error(`Failed to fetch contest history for ${username}`, err)
-    return []
+    logger.warn(`LeetCode GraphQL contests failed for ${username}; trying fallback provider`)
+    try {
+      const { data } = await axios.get<{
+        userContestRankingHistory?: Array<{
+          attended: boolean
+          rating: number
+          ranking: number
+          problemsSolved: number
+          totalProblems: number
+          contest?: { title?: string; slug?: string; startTime?: number }
+        }>
+      }>(`${LEETCODE_FALLBACK_PROFILE}/userContestRankingInfo/${encodeURIComponent(username)}`, { timeout: 15000 })
+
+      return (data.userContestRankingHistory || [])
+        .filter((item) => item.attended && item.contest?.title)
+        .map((item) => ({
+          contestTitle: item.contest?.title || 'LeetCode Contest',
+          contestSlug: item.contest?.slug || toSlug(item.contest?.title || 'leetcode-contest'),
+          rating: item.rating,
+          ranking: item.ranking,
+          problemsSolved: item.problemsSolved,
+          totalProblems: item.totalProblems,
+          attended: item.contest?.startTime ? new Date(item.contest.startTime * 1000) : new Date(),
+        }))
+    } catch (fallbackErr) {
+      logger.error(`Failed to fetch contest history for ${username}`, fallbackErr)
+      return []
+    }
   }
 }
 

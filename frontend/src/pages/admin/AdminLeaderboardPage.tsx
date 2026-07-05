@@ -13,9 +13,9 @@ const itemVariants = { hidden: { opacity: 0, y: 16 }, show: { opacity: 1, y: 0, 
 
 const rankIcon = (rank: number) => {
   if (rank === 1) return <Medal className="w-6 h-6 text-yellow-500 animate-bounce" />
-  if (rank === 2) return <Medal className="w-6 h-6 text-slate-400" />
+  if (rank === 2) return <Medal className="w-6 h-6 text-muted-foreground" />
   if (rank === 3) return <Medal className="w-6 h-6 text-amber-600" />
-  return <span className="text-sm font-bold text-slate-500">#{rank}</span>
+  return <span className="text-sm font-bold text-muted-foreground">#{rank}</span>
 }
 
 export default function AdminLeaderboardPage() {
@@ -59,7 +59,7 @@ export default function AdminLeaderboardPage() {
               <CardContent className="space-y-3 pt-4">
                 <Avatar fallback={getInitials(s.name)} size="lg" className="mx-auto border-2 border-primary/20" />
                 <div>
-                  <p className="font-bold text-sm text-slate-100">{s.name}</p>
+                  <p className="font-bold text-sm text-foreground">{s.name}</p>
                   <p className="text-xs text-muted-foreground">{s.email}</p>
                 </div>
                 <div className="flex flex-col gap-1.5 items-center">
@@ -118,14 +118,14 @@ export default function AdminLeaderboardPage() {
                   key: 'solved',
                   label: 'Total Solved',
                   sortable: true,
-                  render: (r: any) => <span className="font-bold text-slate-100">{r.solved}</span>,
+                  render: (r: any) => <span className="font-bold text-foreground">{r.solved}</span>,
                 },
                 {
                   key: 'streak',
                   label: 'Current Streak',
                   sortable: true,
                   render: (r: any) => (
-                    <span className={r.streak > 0 ? 'text-orange-400 font-semibold' : 'text-slate-500'}>
+                    <span className={r.streak > 0 ? 'text-orange-400 font-semibold' : 'text-muted-foreground'}>
                       {r.streak > 0 ? `🔥 ${r.streak} days` : '—'}
                     </span>
                   ),

@@ -1,0 +1,4 @@
+name,email,dept,password,empId
+Dr. Rajan,rajan@vsb.edu.in,CSE,rajanpass,EMP001
+Prof. Kamala,kamala@vsb.edu.in,IT,,EMP002
+Dr. Suresh,suresh@vsb.edu.in,ECE,secure123,EMP003

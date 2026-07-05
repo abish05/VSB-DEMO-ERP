@@ -52,6 +52,37 @@ async function canAccessUser(req: AuthRequest, targetId: string) {
   return !!assignedStudent
 }
 
+// GET /api/leetcode/leaderboard
+router.get('/leaderboard', async (req: AuthRequest, res: Response) => {
+  try {
+    const students = await prisma.user.findMany({
+      where: { role: 'STUDENT', isActive: true, leetcodeProfile: { isNot: null } },
+      include: {
+        leetcodeProfile: true,
+        department: true,
+      }
+    })
+
+    const leaderboard = students
+      .map(student => ({
+        id: student.id,
+        name: student.name,
+        rollNo: student.rollNo,
+        dept: student.department?.code || 'N/A',
+        solved: student.leetcodeProfile?.totalSolved || 0,
+        streak: student.leetcodeProfile?.currentStreak || 0,
+        rating: Math.round(student.leetcodeProfile?.contestRating || 0),
+        change: 0
+      }))
+      .sort((a, b) => b.solved - a.solved)
+      .map((s, index) => ({ ...s, rank: index + 1 }))
+
+    res.json(leaderboard)
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to fetch leaderboard' })
+  }
+})
+
 // GET /api/leetcode/my-students
 router.get('/my-students', async (req: AuthRequest, res: Response) => {
   try {

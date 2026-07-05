@@ -47,6 +47,14 @@ export const firebaseAuth = hasCreds ? admin.auth() : {
       uid: 'seed-admin-uid-001',
       email: 'abishstk@gmail.com',
     }
+  },
+  updateUser: async (uid: string, data: any) => {
+    console.log(`[Mock Firebase Auth] updateUser called for ${uid} with data:`, data)
+    return { uid, ...data }
+  },
+  createUser: async (data: any) => {
+    console.log(`[Mock Firebase Auth] createUser called with data:`, data)
+    return { uid: `mock-uid-${Math.random().toString(36).substring(2, 9)}`, ...data }
   }
 } as any
 

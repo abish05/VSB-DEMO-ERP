@@ -6,13 +6,16 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { DataTable } from '@/components/tables/DataTable'
 import { adminService } from '@/services/admin.service'
-import { FileText, BarChart3, Search } from 'lucide-react'
+import { FileText, BarChart3, Search, Download } from 'lucide-react'
+import { useToast } from '@/hooks/use-toast'
 
 const containerVariants = { hidden: {}, show: { transition: { staggerChildren: 0.07 } } }
 const itemVariants = { hidden: { opacity: 0, y: 16 }, show: { opacity: 1, y: 0, transition: { duration: 0.35 } } }
 
 export default function AdminReportsPage() {
   const [reportType, setReportType] = useState('solve-count')
+  const [isExporting, setIsExporting] = useState(false)
+  const { toast } = useToast()
 
   // Query reports data
   const { data: reportData = [], isLoading, refetch } = useQuery({
@@ -25,6 +28,7 @@ export default function AdminReportsPage() {
     name: item.name,
     email: item.email,
     solved: item.solved || 0,
+    solvedToday: item.solvedToday || 0,
     easy: item.easy || 0,
     medium: item.medium || 0,
     hard: item.hard || 0,
@@ -40,7 +44,17 @@ export default function AdminReportsPage() {
     if (reportType === 'solve-count') {
       return [
         ...baseCols,
-        { key: 'solved', label: 'Total Solved', sortable: true, render: (r: any) => <span className="font-bold text-slate-200">{r.solved}</span> },
+        { key: 'solved', label: 'Total Solved', sortable: true, render: (r: any) => <span className="font-bold text-foreground">{r.solved}</span> },
+        { 
+          key: 'solvedToday', 
+          label: 'Solved Today', 
+          sortable: true, 
+          render: (r: any) => (
+            <span className={r.solvedToday > 0 ? "font-bold text-success" : "text-muted-foreground"}>
+              {r.solvedToday > 0 ? `+${r.solvedToday}` : r.solvedToday}
+            </span>
+          ) 
+        },
         { key: 'easy', label: 'Easy Solved', sortable: true, render: (r: any) => <span className="text-success">{r.easy}</span> },
         { key: 'medium', label: 'Medium Solved', sortable: true, render: (r: any) => <span className="text-warning">{r.medium}</span> },
         { key: 'hard', label: 'Hard Solved', sortable: true, render: (r: any) => <span className="text-error">{r.hard}</span> },
@@ -63,7 +77,7 @@ export default function AdminReportsPage() {
           <p className="text-muted-foreground text-sm mt-1">Compile institutional metrics and LeetCode performance logs</p>
         </div>
 
-        <div className="flex gap-2 bg-slate-950 p-1 border border-slate-800 rounded-lg">
+        <div className="flex gap-2 bg-background p-1 border border-border rounded-lg">
           <Button
             variant={reportType === 'solve-count' ? 'default' : 'ghost'}
             size="sm"
@@ -85,7 +99,7 @@ export default function AdminReportsPage() {
 
       {/* Quick Summary card */}
       <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="md:col-span-1 bg-slate-900 border-slate-800">
+        <Card className="md:col-span-1 bg-card border-border">
           <CardHeader>
             <CardTitle className="text-sm font-semibold flex items-center gap-2">
               <FileText className="w-4 h-4 text-primary" /> Report Parameters
@@ -93,21 +107,40 @@ export default function AdminReportsPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-slate-400">Target Group</label>
-              <select className="w-full bg-slate-950 border border-slate-800 rounded-lg h-9 px-3 text-xs text-slate-300">
+              <label className="text-xs font-semibold text-muted-foreground">Target Group</label>
+              <select className="w-full bg-background border border-border rounded-lg h-9 px-3 text-xs text-muted-foreground">
                 <option>All Enrolled Students</option>
               </select>
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-slate-400">Activity Threshold</label>
-              <select className="w-full bg-slate-950 border border-slate-800 rounded-lg h-9 px-3 text-xs text-slate-300">
+              <label className="text-xs font-semibold text-muted-foreground">Activity Threshold</label>
+              <select className="w-full bg-background border border-border rounded-lg h-9 px-3 text-xs text-muted-foreground">
                 <option>All Active Users</option>
               </select>
             </div>
 
-            <Button onClick={() => refetch()} className="w-full h-9 text-xs gap-2 mt-2">
+            <Button onClick={() => refetch()} className="w-full h-9 text-xs gap-2 mt-2" disabled={isLoading}>
               <Search className="w-3.5 h-3.5" /> Compile Fresh Report
+            </Button>
+            
+            <Button 
+              onClick={async () => {
+                try {
+                  setIsExporting(true)
+                  await adminService.exportExcelReport()
+                  toast({ title: 'Export Successful', description: 'Excel report downloaded.' })
+                } catch (err) {
+                  toast({ title: 'Export Failed', description: 'Failed to generate Excel report.', variant: 'destructive' })
+                } finally {
+                  setIsExporting(false)
+                }
+              }} 
+              variant="secondary" 
+              className="w-full h-9 text-xs gap-2 mt-2"
+              disabled={isExporting}
+            >
+              <Download className="w-3.5 h-3.5" /> {isExporting ? 'Exporting...' : 'Export to Excel'}
             </Button>
           </CardContent>
         </Card>

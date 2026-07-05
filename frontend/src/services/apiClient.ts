@@ -1,5 +1,5 @@
 import axios from 'axios'
-import { auth } from '@/lib/firebase'
+import { auth, signOut } from '@/lib/firebase'
 import { API_BASE } from '@/lib/api'
 
 const apiClient = axios.create({
@@ -7,8 +7,13 @@ const apiClient = axios.create({
   headers: { 'Content-Type': 'application/json' },
 })
 
-// Attach Firebase ID token to every request
+// Attach Firebase ID token (or mockToken) to every request
 apiClient.interceptors.request.use(async (config) => {
+  // If a specific Authorization header was passed explicitly, don't override it
+  if (config.headers.Authorization || config.headers.get?.('Authorization')) {
+    return config
+  }
+
   const user = auth.currentUser
   if (user) {
     const token = await user.getIdToken()
@@ -27,12 +32,16 @@ apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
     if (error.response?.status === 401) {
+      // Clear any stored session data
+      localStorage.removeItem('mockToken')
       try {
-        await auth.signOut()
+        await signOut(auth)
       } catch (e) {
-        console.error("Failed to sign out user", e)
+        console.error('Failed to sign out user', e)
       }
-      window.location.href = '/login'
+      // Redirect to the appropriate login page based on current URL
+      const isAdminRoute = window.location.pathname.startsWith('/admin')
+      window.location.href = isAdminRoute ? '/admin' : '/login'
     }
     return Promise.reject(error)
   }

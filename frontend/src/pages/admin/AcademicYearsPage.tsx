@@ -176,24 +176,24 @@ export default function AcademicYearsPage() {
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-6 shadow-2xl relative"
+            className="bg-card border border-border rounded-2xl w-full max-w-md p-6 shadow-2xl relative"
           >
-            <button onClick={closeModal} className="absolute top-4 right-4 text-slate-500 hover:text-slate-300">
+            <button onClick={closeModal} className="absolute top-4 right-4 text-muted-foreground hover:text-foreground">
               <X className="w-5 h-5" />
             </button>
-            <h2 className="text-lg font-bold text-slate-200 mb-4">{editingYear ? 'Edit Calendar Details' : 'Add Academic Year'}</h2>
+            <h2 className="text-lg font-bold text-foreground mb-4">{editingYear ? 'Edit Calendar Details' : 'Add Academic Year'}</h2>
             <form onSubmit={handleSave} className="space-y-4">
-              <Input label="Calendar Name" value={name} onChange={(e) => setName(e.target.value)} required placeholder="2024-2025" className="bg-slate-950 border-slate-800" />
-              <Input label="Start Date" type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} required className="bg-slate-950 border-slate-800 text-slate-100" />
-              <Input label="End Date" type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} required className="bg-slate-950 border-slate-800 text-slate-100" />
+              <Input label="Calendar Name" value={name} onChange={(e) => setName(e.target.value)} required placeholder="2024-2025" className="bg-background border-input" />
+              <Input label="Start Date" type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} required className="bg-background border-input text-foreground" />
+              <Input label="End Date" type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} required className="bg-background border-input text-foreground" />
 
               <div className="flex items-center gap-2 pt-2">
-                <input type="checkbox" id="isActive" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} className="rounded border-slate-800 bg-slate-950 text-primary focus:ring-primary h-4 w-4" />
-                <label htmlFor="isActive" className="text-xs font-semibold text-slate-300 cursor-pointer">Set as Active Calendar</label>
+                <input type="checkbox" id="isActive" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} className="rounded border-input bg-background text-primary focus:ring-primary h-4 w-4" />
+                <label htmlFor="isActive" className="text-xs font-semibold text-foreground cursor-pointer">Set as Active Calendar</label>
               </div>
 
               <div className="flex gap-3 justify-end pt-4">
-                <Button type="button" variant="outline" onClick={closeModal} className="border-slate-800 text-slate-400 hover:bg-slate-800">Cancel</Button>
+                <Button type="button" variant="outline" onClick={closeModal} className="border-input text-muted-foreground hover:bg-muted">Cancel</Button>
                 <Button type="submit" isLoading={createMutation.isPending || updateMutation.isPending}>Save Calendar</Button>
               </div>
             </form>
