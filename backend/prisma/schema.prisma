@@ -1,0 +1,219 @@
+// This is your Prisma schema file
+// Learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ─────────────────── Enums ───────────────────
+
+enum Role {
+  ADMIN
+  FACULTY
+  STUDENT
+}
+
+enum SyncStatus {
+  SUCCESS
+  ERROR
+  PENDING
+}
+
+enum NotificationType {
+  CONTEST
+  REMINDER
+  ACHIEVEMENT
+  ALERT
+  ANNOUNCEMENT
+}
+
+// ─────────────────── Core Models ───────────────────
+
+model User {
+  id          String   @id @default(cuid())
+  firebaseUid String   @unique
+  email       String   @unique
+  name        String
+  role        Role     @default(STUDENT)
+  avatar      String?
+  isActive    Boolean  @default(true)
+  rollNo      String?
+  employeeId  String?
+  designation String?
+
+  departmentId  String?
+  department    Department? @relation(fields: [departmentId], references: [id])
+
+  // Faculty: sections they manage
+  sections      Section[] @relation("FacultySection")
+
+  // Student: section enrollment
+  sectionId     String?
+  section       Section? @relation("StudentSection", fields: [sectionId], references: [id])
+
+  leetcodeProfile LeetCodeProfile?
+  dailyActivities DailyActivity[]
+  contestHistories ContestHistory[]
+  notifications   Notification[]
+  syncLogs        SyncLog[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
+
+model Department {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  code        String   @unique
+  description String?
+  users       User[]
+  batches     Batch[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("departments")
+}
+
+model AcademicYear {
+  id        String   @id @default(cuid())
+  name      String   @unique // e.g. "2024-25"
+  startDate DateTime
+  endDate   DateTime
+  isActive  Boolean  @default(false)
+  batches   Batch[]
+  createdAt DateTime @default(now())
+
+  @@map("academic_years")
+}
+
+model Batch {
+  id             String       @id @default(cuid())
+  name           String       // e.g. "2021-25"
+  year           Int          // Admission year
+  departmentId   String
+  department     Department   @relation(fields: [departmentId], references: [id])
+  academicYearId String
+  academicYear   AcademicYear @relation(fields: [academicYearId], references: [id])
+  sections       Section[]
+  createdAt      DateTime     @default(now())
+
+  @@unique([name, departmentId])
+  @@map("batches")
+}
+
+model Section {
+  id        String   @id @default(cuid())
+  name      String   // e.g. "A", "B"
+  batchId   String
+  batch     Batch    @relation(fields: [batchId], references: [id])
+  facultyId String
+  faculty   User     @relation("FacultySection", fields: [facultyId], references: [id])
+  students  User[]   @relation("StudentSection")
+  createdAt DateTime @default(now())
+
+  @@unique([name, batchId])
+  @@map("sections")
+}
+
+// ─────────────────── LeetCode Models ───────────────────
+
+model LeetCodeProfile {
+  id             String   @id @default(cuid())
+  userId         String   @unique
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  username       String   @unique
+  displayName    String?
+  avatar         String?
+  country        String?
+  reputation     Int?
+  totalSolved    Int      @default(0)
+  easySolved     Int      @default(0)
+  mediumSolved   Int      @default(0)
+  hardSolved     Int      @default(0)
+  acceptanceRate Float    @default(0)
+  contestRating  Float    @default(0)
+  globalRank     Int?
+  bestContestRanking Int?
+  totalContestsParticipated Int @default(0)
+  currentStreak  Int      @default(0)
+  longestStreak  Int      @default(0)
+  dailySolvedCount Int    @default(0)
+  weeklySolvedCount Int   @default(0)
+  monthlySolvedCount Int  @default(0)
+  totalActiveDays Int     @default(0)
+  lastSubmissionDate DateTime?
+  recentSubmissions Json?
+  syncStatus     SyncStatus @default(PENDING)
+
+  submissionCalendar Json? // { "timestamp": count }
+
+  lastSyncedAt   DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@map("leetcode_profiles")
+}
+
+model DailyActivity {
+  id     String   @id @default(cuid())
+  userId String
+  user   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date   DateTime @db.Date
+  solved Int      @default(0)
+  easy   Int      @default(0)
+  medium Int      @default(0)
+  hard   Int      @default(0)
+
+  @@unique([userId, date])
+  @@map("daily_activities")
+}
+
+model ContestHistory {
+  id             String   @id @default(cuid())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contestTitle   String
+  contestSlug    String
+  rating         Float
+  ranking        Int
+  problemsSolved Int      @default(0)
+  totalProblems  Int      @default(0)
+  attended       DateTime
+  createdAt      DateTime @default(now())
+
+  @@unique([userId, contestSlug])
+  @@map("contest_histories")
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      NotificationType
+  title     String
+  body      String
+  read      Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  @@map("notifications")
+}
+
+model SyncLog {
+  id       String     @id @default(cuid())
+  userId   String
+  user     User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status   SyncStatus
+  message  String?
+  syncedAt DateTime   @default(now())
+
+  @@map("sync_logs")
+}
