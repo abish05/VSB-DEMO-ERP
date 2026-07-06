@@ -22,7 +22,9 @@ const configuredOrigins = (process.env.FRONTEND_URL || 'http://localhost:3001')
 function isAllowedOrigin(origin?: string) {
   if (!origin) return true
   if (configuredOrigins.includes(origin)) return true
-  return /^http:\/\/localhost:(3\d{3}|5\d{3})$/.test(origin)
+  if (/^http:\/\/localhost:(3\d{3}|5\d{3})$/.test(origin)) return true
+  if (/\.vercel\.app$/.test(origin)) return true
+  return false
 }
 
 // ─── Security & Middleware ───
