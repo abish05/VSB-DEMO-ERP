@@ -1,0 +1,22 @@
+{
+  "collegeName": "VSB Engineering College",
+  "academicYear": "2025-2026",
+  "timeZone": "UTC+5:30 (IST)",
+  "maintenanceMode": false,
+  "maintenanceMsg": "System is undergoing scheduled database maintenance.",
+  "leetcodeSyncFreq": "6h",
+  "githubSyncEnabled": true,
+  "githubSyncFreq": "12h",
+  "notifyEmail": true,
+  "notifyPush": true,
+  "notifySms": false,
+  "notifyPlacement": true,
+  "require2FA": false,
+  "jwtExpiry": "24h",
+  "rateLimit": 100,
+  "maxLoginAttempts": 5,
+  "leetcodeApiStatus": "healthy",
+  "githubApiStatus": "healthy",
+  "geminiApiKey": "••••••••••••••••••••••••",
+  "geminiStatus": "healthy"
+}

@@ -6,51 +6,55 @@
 
 @layer base {
   :root {
-    --background: 220 20% 97%;
+    /* Light mode */
+    --background: 210 40% 98%;         /* #F8FAFC */
     --foreground: 222 47% 11%;
     --card: 0 0% 100%;
     --card-foreground: 222 47% 11%;
     --popover: 0 0% 100%;
     --popover-foreground: 222 47% 11%;
-    --primary: 358 79% 50%; /* #E31E24 */
-    --primary-foreground: 0 0% 100%;
-    --secondary: 222 47% 11%;
-    --secondary-foreground: 0 0% 100%;
-    --muted: 210 40% 96%;
+    --primary: 43 97% 48%;             /* #F5B301 */
+    --primary-hover: 39 100% 45%;      /* #E6A300 */
+    --primary-foreground: 222 47% 7%;  /* #111827 */
+    --secondary: 215 28% 17%;          /* #1E293B */
+    --secondary-foreground: 210 40% 98%;
+    --muted: 210 40% 93%;
     --muted-foreground: 215 16% 47%;
-    --accent: 210 40% 94%;
-    --accent-foreground: 358 79% 50%;
-    --destructive: 0 84% 60%;
+    --accent: 43 97% 93%;
+    --accent-foreground: 222 47% 11%;
+    --destructive: 0 84% 60%;          /* #EF4444 */
     --destructive-foreground: 0 0% 100%;
-    --border: 214 32% 91%;
-    --input: 214 32% 91%;
-    --ring: 358 79% 50%;
-    --radius: 0.5rem;
+    --border: 215 28% 27%;             /* #334155 */
+    --input: 215 20% 90%;
+    --ring: 43 97% 48%;
+    --radius: 0.625rem;
     --sidebar-width: 256px;
     --sidebar-collapsed-width: 64px;
     --topbar-height: 64px;
   }
 
   .dark {
-    --background: 222 47% 8%;
-    --foreground: 210 40% 98%;
-    --card: 222 47% 11%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222 47% 11%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 217 91% 60%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 217 33% 17%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217 33% 17%;
-    --muted-foreground: 215 20% 65%;
-    --accent: 217 33% 17%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 63% 31%;
+    /* Dark mode */
+    --background: 222 47% 7%;          /* #111827 */
+    --foreground: 210 40% 96%;         /* #F1F5F9 */
+    --card: 215 35% 18%;               /* #1E293B surface */
+    --card-foreground: 210 40% 96%;
+    --popover: 215 35% 14%;            /* #243447 dark card */
+    --popover-foreground: 210 40% 96%;
+    --primary: 43 97% 48%;             /* #F5B301 gold */
+    --primary-hover: 39 100% 45%;      /* #E6A300 */
+    --primary-foreground: 222 47% 7%;  /* #111827 */
+    --secondary: 215 35% 14%;
+    --secondary-foreground: 210 40% 96%;
+    --muted: 215 35% 18%;
+    --muted-foreground: 215 20% 58%;   /* #94A3B8 */
+    --accent: 215 35% 18%;
+    --accent-foreground: 210 40% 96%;
+    --destructive: 0 63% 50%;          /* #EF4444 */
     --destructive-foreground: 210 40% 98%;
-    --border: 217 33% 17%;
-    --input: 217 33% 17%;
-    --ring: 217 91% 60%;
+    --border: 215 28% 27%;             /* #334155 */
+    --input: 215 35% 18%;
+    --ring: 43 97% 48%;
   }
 }
 
@@ -71,17 +75,17 @@
 @layer components {
   /* Card styles */
   .stat-card {
-    @apply bg-card rounded-xl border border-border p-6 shadow-card hover:shadow-card-hover transition-shadow duration-200;
+    @apply bg-card rounded-xl border border-border p-6 shadow-card hover:shadow-card-hover transition-all duration-200;
   }
 
   /* Sidebar styles */
   .sidebar-link {
     @apply flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150
-           text-sidebar-foreground hover:text-white hover:bg-sidebar-hover;
+           text-sidebar-foreground hover:text-foreground hover:bg-sidebar-hover;
   }
 
   .sidebar-link.active {
-    @apply bg-primary text-white;
+    @apply bg-primary text-primary-foreground;
   }
 
   /* Badge variants */
@@ -95,15 +99,27 @@
     @apply bg-error/15 text-error text-xs font-semibold px-2 py-0.5 rounded-full;
   }
 
+  /* Golden primary button */
+  .btn-primary {
+    @apply bg-primary text-primary-foreground font-semibold px-6 py-2.5 rounded-lg
+           hover:bg-primary-hover transition-all duration-200 shadow-md hover:shadow-lg;
+  }
+
   /* Heatmap cell */
   .heatmap-cell {
     @apply w-3 h-3 rounded-sm transition-colors duration-100 cursor-pointer;
   }
   .heatmap-0  { @apply bg-muted; }
-  .heatmap-1  { @apply bg-success/25; }
-  .heatmap-2  { @apply bg-success/50; }
-  .heatmap-3  { @apply bg-success/75; }
-  .heatmap-4  { @apply bg-success; }
+  .heatmap-1  { @apply bg-primary/20; }
+  .heatmap-2  { @apply bg-primary/45; }
+  .heatmap-3  { @apply bg-primary/70; }
+  .heatmap-4  { @apply bg-primary; }
+
+  /* Feature card (dark card on dark bg like screenshot) */
+  .feature-card {
+    @apply bg-card border border-border rounded-xl p-4 flex items-start gap-3
+           hover:border-primary/40 transition-all duration-200 cursor-pointer;
+  }
 }
 
 @layer utilities {
@@ -114,7 +130,7 @@
   .skeleton::after {
     content: '';
     @apply absolute inset-0;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
     animation: shimmer 1.5s infinite;
     background-size: 200px 100%;
   }
@@ -142,6 +158,21 @@
   }
   .dark .glass {
     @apply bg-black/20 border-white/10;
+  }
+
+  /* Warm cream panel (left side like screenshot) */
+  .panel-cream {
+    background: linear-gradient(135deg, #FFF8E7 0%, #FFF3CC 50%, #FDE9A0 100%);
+  }
+
+  /* Dark navy panel (right side like screenshot) */
+  .panel-navy {
+    background: linear-gradient(180deg, #141929 0%, #1C2436 100%);
+  }
+
+  /* Golden glow effect on primary elements */
+  .glow-primary {
+    box-shadow: 0 0 20px rgba(253, 197, 0, 0.3), 0 0 40px rgba(253, 197, 0, 0.1);
   }
 
   /* Page transition */

@@ -25,22 +25,38 @@ export default {
         background: 'hsl(var(--background))',
         foreground: 'hsl(var(--foreground))',
         primary: {
-          DEFAULT: '#E31E24', // VSB Red
-          foreground: '#ffffff',
-          50: '#FDE8E9',
-          100: '#FCD1D3',
-          200: '#F8A3A6',
-          300: '#F47579',
-          400: '#F0474C',
-          500: '#E31E24',
-          600: '#B6181D',
-          700: '#881216',
-          800: '#5B0C0E',
-          900: '#2D0607',
+          DEFAULT: '#F5B301',       // Primary Gold
+          hover:   '#E6A300',       // Gold Hover
+          light:   '#FFD45A',       // Gold Light
+          foreground: '#111827',    // Dark text on gold
+          50:  '#FFFCE6',
+          100: '#FFF3B3',
+          200: '#FFE566',
+          300: '#FFD45A',
+          400: '#F5B301',
+          500: '#F5B301',
+          600: '#E6A300',
+          700: '#B37D00',
+          800: '#7A5500',
+          900: '#3D2B00',
         },
         secondary: {
-          DEFAULT: '#0F172A',
-          foreground: '#ffffff',
+          DEFAULT: '#1E293B',       // Dark Surface
+          foreground: '#F8FAFC',
+        },
+        dark: {
+          bg:      '#111827',       // Dark Background
+          surface: '#1E293B',       // Dark Surface
+          card:    '#243447',       // Dark Card
+        },
+        cream: {
+          DEFAULT: '#FFF8E7',       // Warm cream — light panel bg
+          100:     '#FFF3CC',
+          200:     '#FFE999',
+          300:     '#FDE9A0',
+        },
+        light: {
+          DEFAULT: '#F8FAFC',       // Light Background
         },
         success: {
           DEFAULT: '#22C55E',
@@ -78,11 +94,11 @@ export default {
           foreground: 'hsl(var(--card-foreground))',
         },
         sidebar: {
-          DEFAULT: '#283593', // VSB Navy text color
-          foreground: '#C5CAE9',
-          active: '#E31E24', // Red for active item
-          'active-bg': '#E31E24',
-          hover: '#303F9F',
+          DEFAULT: '#1E293B',       // Dark Surface sidebar
+          foreground: '#94A3B8',    // Secondary text
+          active: '#F5B301',        // Gold active item
+          'active-bg': 'rgba(245,179,1,0.12)',
+          hover: '#243447',         // Dark card hover
         },
       },
       borderRadius: {

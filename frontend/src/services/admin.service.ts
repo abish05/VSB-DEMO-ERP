@@ -138,6 +138,11 @@ export const adminService = {
     return data
   },
 
+  async importJSON(type: 'students' | 'faculty', users: any[]): Promise<{ imported: number; errors: string[] }> {
+    const { data } = await apiClient.post('/admin/import/json', { type, users })
+    return data
+  },
+
   // Reports
   async generateReport(type: string, params: Record<string, unknown>) {
     const { data } = await apiClient.get('/admin/reports', { params: { type, ...params } })
@@ -176,5 +181,50 @@ export const adminService = {
     document.body.appendChild(link)
     link.click()
     link.remove()
+  },
+
+  async getSettings(): Promise<any> {
+    const { data } = await apiClient.get('/admin/settings')
+    return data
+  },
+
+  async saveSettings(settings: any): Promise<any> {
+    const { data } = await apiClient.post('/admin/settings', settings)
+    return data
+  },
+
+  async getAuditLogs(): Promise<any[]> {
+    const { data } = await apiClient.get('/admin/profile/audit-logs')
+    return data
+  },
+
+  async getLoginHistory(): Promise<any[]> {
+    const { data } = await apiClient.get('/admin/profile/login-history')
+    return data
+  },
+
+  async getActiveSessions(): Promise<any[]> {
+    const { data } = await apiClient.get('/admin/profile/active-sessions')
+    return data
+  },
+
+  async terminateSession(sessionId: string): Promise<any> {
+    const { data } = await apiClient.post('/admin/profile/terminate-session', { sessionId })
+    return data
+  },
+
+  async terminateAllSessions(): Promise<any> {
+    const { data } = await apiClient.post('/admin/profile/terminate-all-sessions')
+    return data
+  },
+
+  async getMonitoringMetrics(): Promise<any> {
+    const { data } = await apiClient.get('/admin/monitoring/metrics')
+    return data
+  },
+
+  async getBackgroundJobs(): Promise<any[]> {
+    const { data } = await apiClient.get('/admin/background-jobs')
+    return data
   },
 }

@@ -20,7 +20,7 @@ export const useUIStore = create<UIState>()(
   persist(
     (set) => ({
       sidebarCollapsed: false,
-      theme: 'light',
+      theme: 'dark',
       notificationPanelOpen: false,
       commandPaletteOpen: false,
 

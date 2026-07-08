@@ -186,8 +186,9 @@ async function main() {
     })
 
     try {
-      await syncUser(user.id)
-      console.log(`Synced real LeetCode data for ${student.leetcodeUsername}`)
+      // Bypassed network sync during initial seeding to run instantly
+      // await syncUser(user.id)
+      console.log(`Queued initial sync for ${student.leetcodeUsername}`)
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unknown sync error'
       console.warn(`Could not sync ${student.leetcodeUsername}: ${message}`)

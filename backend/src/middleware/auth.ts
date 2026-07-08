@@ -1,6 +1,8 @@
 import { Request, Response, NextFunction } from 'express'
 import { firebaseAuth } from '@/config/firebase'
 import prisma from '@/config/prisma'
+import { getSettings } from '@/config/settings'
+import { trackRequestSession } from '@/config/sessionTracker'
 
 import { ParamsDictionary } from 'express-serve-static-core'
 import { ParsedQs } from 'qs'
@@ -26,6 +28,7 @@ export async function authenticate(req: AuthRequest, res: Response, next: NextFu
     }
 
     const token = authHeader.split(' ')[1]
+    const settings = getSettings()
 
     // Always handle mock tokens (dev login, demo admin) regardless of Firebase config
     if (token.startsWith('mock:')) {
@@ -51,6 +54,13 @@ export async function authenticate(req: AuthRequest, res: Response, next: NextFu
       if (user.isActive === false) {
         return res.status(403).json({ message: 'Account is inactive' })
       }
+
+      if (settings.maintenanceMode && user.role !== 'ADMIN') {
+        return res.status(503).json({ message: settings.maintenanceMsg || 'System is under scheduled maintenance.' })
+      }
+
+      // Track active session dynamically
+      trackRequestSession(user.id, user.email, token, req.ip || '127.0.0.1', req.headers['user-agent'] || '')
 
       req.userId = user.id
       req.userRole = user.role
@@ -86,6 +96,13 @@ export async function authenticate(req: AuthRequest, res: Response, next: NextFu
     if (user.isActive === false) {
       return res.status(403).json({ message: 'Account is inactive' })
     }
+
+    if (settings.maintenanceMode && user.role !== 'ADMIN') {
+      return res.status(503).json({ message: settings.maintenanceMsg || 'System is under scheduled maintenance.' })
+    }
+
+    // Track active session dynamically
+    trackRequestSession(user.id, user.email, token, req.ip || '127.0.0.1', req.headers['user-agent'] || '')
 
     req.userId = user.id
     req.userRole = user.role

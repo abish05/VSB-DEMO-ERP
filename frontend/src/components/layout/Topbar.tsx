@@ -104,9 +104,9 @@ export function Topbar() {
   return (
     <motion.header 
       initial={false}
-      animate={{ left: sidebarCollapsed ? 64 : 256 }}
+      animate={{ paddingLeft: sidebarCollapsed ? 64 + 16 : 256 + 16 }}
       transition={{ duration: 0.25, ease: 'easeInOut' }}
-      className="fixed top-0 right-0 h-16 bg-card backdrop-blur border-b border-border z-30 flex items-center px-4 gap-4"
+      className="fixed top-0 left-0 right-0 h-16 bg-card backdrop-blur border-b border-border z-30 flex items-center pr-4 gap-4"
     >
       {/* Left: breadcrumbs */}
       <div className="flex-1">

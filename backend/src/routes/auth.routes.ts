@@ -113,6 +113,12 @@ router.post('/dev-login', async (req, res: Response) => {
       return res.status(404).json({ message: 'No account found for this email' })
     }
 
+    const { getSettings } = require('@/config/settings')
+    const settings = getSettings()
+    if (settings.maintenanceMode && user.role !== 'ADMIN') {
+      return res.status(503).json({ message: settings.maintenanceMsg || 'System is under scheduled maintenance.' })
+    }
+
     // In production, only allow if this is a verified admin lookup by UID (demo admin button)
     // This check is intentionally limited to prevent abuse
     if (process.env.NODE_ENV === 'production' && user.role !== 'ADMIN') {
