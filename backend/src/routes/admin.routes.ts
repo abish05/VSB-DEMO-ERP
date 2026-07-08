@@ -563,7 +563,13 @@ router.post('/users', async (req: AuthRequest, res: Response) => {
 router.put('/users/:id', async (req: AuthRequest, res: Response) => {
   try {
     const id = req.params.id as string
+    // batchId is not a direct User field (batch is derived via section → batch)
+    // so we destructure it out and ignore it for the user update
     const { name, email, role, departmentId, sectionId, leetcodeUsername } = req.body
+
+    // Sanitize empty strings to null so Prisma doesn't fail FK constraints
+    const sanitizedDepartmentId = departmentId && departmentId.trim() !== '' ? departmentId : null
+    const sanitizedSectionId = sectionId && sectionId.trim() !== '' ? sectionId : null
 
     await prisma.user.update({
       where: { id },
@@ -571,36 +577,39 @@ router.put('/users/:id', async (req: AuthRequest, res: Response) => {
         name,
         email,
         role: role as Role,
-        departmentId: departmentId !== undefined ? departmentId : undefined,
-        sectionId: sectionId !== undefined ? sectionId : undefined,
+        departmentId: sanitizedDepartmentId,
+        sectionId: sanitizedSectionId,
       }
     })
 
     if (leetcodeUsername !== undefined) {
-      await prisma.leetCodeProfile.upsert({
-        where: { userId: id },
-        create: {
-          userId: id,
-          username: leetcodeUsername,
-          totalSolved: 0,
-          easySolved: 0,
-          mediumSolved: 0,
-          hardSolved: 0,
-          contestRating: 0,
-          currentStreak: 0,
-          longestStreak: 0,
-          submissionCalendar: {},
-          lastSyncedAt: new Date(),
-        },
-        update: {
-          username: leetcodeUsername
-        }
-      })
+      if (leetcodeUsername && leetcodeUsername.trim() !== '') {
+        await prisma.leetCodeProfile.upsert({
+          where: { userId: id },
+          create: {
+            userId: id,
+            username: leetcodeUsername.trim(),
+            totalSolved: 0,
+            easySolved: 0,
+            mediumSolved: 0,
+            hardSolved: 0,
+            contestRating: 0,
+            currentStreak: 0,
+            longestStreak: 0,
+            submissionCalendar: {},
+            lastSyncedAt: new Date(),
+          },
+          update: {
+            username: leetcodeUsername.trim()
+          }
+        })
+      }
     }
 
     const fullUser = await resolveUserRelations(id)
     res.json(fullUser)
   } catch (err) {
+    console.error('Failed to update user:', err)
     res.status(400).json({ message: 'Failed to update user' })
   }
 })

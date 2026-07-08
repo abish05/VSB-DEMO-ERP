@@ -129,9 +129,10 @@ export default function StudentManagementPage() {
       name,
       email,
       role: 'STUDENT',
-      departmentId,
-      sectionId,
-      batchId,
+      // batchId is NOT a direct User field — batch is derived via section
+      // Only send departmentId/sectionId if they have a real value
+      departmentId: departmentId || null,
+      sectionId: sectionId || null,
       leetcodeUsername,
     }
     if (editingStudent) {
