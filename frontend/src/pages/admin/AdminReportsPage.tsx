@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useQuery, useMutation } from '@tanstack/react-query'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -32,6 +32,7 @@ const REPORT_TYPES = [
   { id: 'contest-rating',      label: 'Contest Rating'      },
   { id: 'daily-activity',      label: 'Daily Activity'      },
   { id: 'placement-readiness', label: 'Placement Readiness' },
+  { id: 'faculty-performance', label: 'Faculty Performance' },
 ]
 
 // ─── Helpers ──────────────────────────────────────────────────
@@ -86,11 +87,14 @@ export default function AdminReportsPage() {
 
   // ── Data fetching ─────────────────────────────────────────────
   const { data: depts } = useQuery({ queryKey: ['departments'], queryFn: () => adminService.getDepartments() })
-  const { data: studentsData, isLoading, refetch } = useQuery({
-    queryKey: ['adminStudents'],
-    queryFn: () => adminService.getUsers({ role: 'STUDENT', limit: 2000 }),
+  const { data: allUsersData, isLoading, refetch } = useQuery({
+    queryKey: ['adminAllUsers'],
+    queryFn: () => adminService.getUsers({ limit: 2000 }),
   })
-  const students: UserProfile[] = studentsData?.data || []
+  const allUsers: UserProfile[] = allUsersData?.data || []
+
+  const students = useMemo(() => allUsers.filter(u => u.role === 'STUDENT'), [allUsers])
+  const faculty = useMemo(() => allUsers.filter(u => u.role === 'FACULTY'), [allUsers])
 
   // ── Sync mutation ─────────────────────────────────────────────
   const syncMutation = useMutation({
@@ -128,6 +132,49 @@ export default function AdminReportsPage() {
     }
   }), [students])
 
+  // ── Faculty Performance rows ───────────────────────────────────
+  const facultyRows = useMemo(() => {
+    return faculty.map((f) => {
+      const managedStudents = students.filter(s => s.section?.faculty?.id === f.id)
+      const totalStudents = managedStudents.length
+      const linkedProfiles = managedStudents.filter(s => s.leetcodeProfile).length
+      
+      const totalSolved = managedStudents.reduce((sum, s) => sum + (s.leetcodeProfile?.totalSolved ?? 0), 0)
+      const avgSolved = totalStudents > 0 ? (totalSolved / totalStudents).toFixed(1) : '0'
+      
+      const ratedStudentsCount = managedStudents.filter(s => (s.leetcodeProfile?.contestRating ?? 0) > 0).length
+      const totalRatingSum = managedStudents.reduce((sum, s) => sum + (s.leetcodeProfile?.contestRating ?? 0), 0)
+      const avgRating = ratedStudentsCount > 0 ? (totalRatingSum / ratedStudentsCount).toFixed(0) : '0'
+      
+      const sectionsSet = new Set(managedStudents.map(s => s.section?.name).filter(Boolean))
+      const sectionsManaged = sectionsSet.size > 0 ? Array.from(sectionsSet).join(', ') : '—'
+      
+      return {
+        id: f.id,
+        name: f.name,
+        email: f.email,
+        employeeId: f.employeeId || '—',
+        department: f.department?.code || '—',
+        sections: sectionsManaged,
+        totalStudents,
+        linkedProfiles,
+        avgSolved: Number(avgSolved),
+        avgRating: Number(avgRating),
+        activeRate: totalStudents > 0 ? Math.round((linkedProfiles / totalStudents) * 100) : 0,
+      }
+    })
+  }, [faculty, students])
+
+  // ── Reset Page & sort fields on Report Type change ────────────────
+  useEffect(() => {
+    setPage(1)
+    if (reportType === 'faculty-performance') {
+      setSortKey('totalStudents')
+    } else {
+      setSortKey('totalSolved')
+    }
+  }, [reportType])
+
   // ── Summary cards ─────────────────────────────────────────────
   const summary = useMemo(() => {
     const withProfile = rows.filter(r => r.leetcode !== '—')
@@ -142,7 +189,7 @@ export default function AdminReportsPage() {
     return { totalSolved, solvedToday, avgSolved, avgRating, avgAcc, top, highStreak, active, withProfile: withProfile.length }
   }, [rows])
 
-  // ── Filter + search ───────────────────────────────────────────
+  // ── Filter + search (Students) ──────────────────────────────────
   const filtered = useMemo(() => {
     let d = [...rows]
     if (search) {
@@ -158,7 +205,20 @@ export default function AdminReportsPage() {
     return d
   }, [rows, search, filterDept, filterYear, filterStatus, filterMinRating, filterMaxRating])
 
-  // ── Sort ──────────────────────────────────────────────────────
+  // ── Filter + search (Faculty) ───────────────────────────────────
+  const filteredFaculty = useMemo(() => {
+    let list = [...facultyRows]
+    if (search) {
+      const q = search.toLowerCase()
+      list = list.filter(f => f.name.toLowerCase().includes(q) || f.email.toLowerCase().includes(q) || f.employeeId.toLowerCase().includes(q))
+    }
+    if (filterDept) {
+      list = list.filter(f => f.department === filterDept)
+    }
+    return list
+  }, [facultyRows, search, filterDept])
+
+  // ── Sort Students ──────────────────────────────────────────────
   const sorted = useMemo(() => {
     return [...filtered].sort((a, b) => {
       const av = (a as any)[sortKey], bv = (b as any)[sortKey]
@@ -167,8 +227,21 @@ export default function AdminReportsPage() {
     })
   }, [filtered, sortKey, sortDir])
 
-  const totalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE))
-  const paginated  = sorted.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
+  // ── Sort Faculty ───────────────────────────────────────────────
+  const sortedFaculty = useMemo(() => {
+    return [...filteredFaculty].sort((a, b) => {
+      const av = (a as any)[sortKey], bv = (b as any)[sortKey]
+      const cmp = typeof av === 'number' ? av - bv : String(av).localeCompare(String(bv))
+      return sortDir === 'asc' ? cmp : -cmp
+    })
+  }, [filteredFaculty, sortKey, sortDir])
+
+  const totalPages = reportType === 'faculty-performance'
+    ? Math.max(1, Math.ceil(sortedFaculty.length / PAGE_SIZE))
+    : Math.max(1, Math.ceil(sorted.length / PAGE_SIZE))
+
+  const paginated = sorted.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
+  const paginatedFaculty = sortedFaculty.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
 
   const handleSort = (key: string) => {
     if (sortKey === key) setSortDir(d => d === 'asc' ? 'desc' : 'asc')
@@ -177,76 +250,114 @@ export default function AdminReportsPage() {
   }
 
   const clearFilters = () => {
-    setSearch(''); setFilterDept(''); setFilterYear('')
-    setFilterStatus(''); setFilterMinRating(''); setFilterMaxRating('')
+    setSearch(''); setFilterDept(''); setFilterYear(''); setFilterStatus(''); setFilterMinRating(''); setFilterMaxRating('')
     setPage(1)
   }
 
   const hasFilters = search || filterDept || filterYear || filterStatus || filterMinRating || filterMaxRating
 
   // ── Export helpers ────────────────────────────────────────────
-  const exportRows = sorted.map((r, i) => ({
-    '#':               i + 1,
-    'Student Name':    r.name,
-    'Email':           r.email,
-    'Register No':     r.rollNo,
-    'Department':      r.department,
-    'Year':            r.year,
-    'Section':         r.section,
-    'LeetCode':        r.leetcode,
-    'Total Solved':    r.totalSolved,
-    'Solved Today':    r.solvedToday,
-    'Easy':            r.easy,
-    'Medium':          r.medium,
-    'Hard':            r.hard,
-    'Contest Rating':  r.contestRating,
-    'Acceptance %':    r.acceptance.toFixed(1),
-    'Daily Streak':    r.streak,
-    'Last Synced':     r.lastSynced,
-    'Status':          r.isActive ? 'Active' : 'Inactive',
-    'Placement Score': r.placement,
-  }))
+  const exportRows = useMemo(() => {
+    if (reportType === 'faculty-performance') {
+      return sortedFaculty.map((f, i) => ({
+        '#': i + 1,
+        'Faculty Name': f.name,
+        'Email': f.email,
+        'Employee ID': f.employeeId,
+        'Department': f.department,
+        'Sections': f.sections,
+        'Total Students': f.totalStudents,
+        'Linked Profiles': f.linkedProfiles,
+        'Active Rate %': `${f.activeRate}%`,
+        'Avg Solved': f.avgSolved,
+        'Avg Rating': f.avgRating,
+      }))
+    }
+    return sorted.map((r, i) => ({
+      '#':               i + 1,
+      'Student Name':    r.name,
+      'Email':           r.email,
+      'Register No':     r.rollNo,
+      'Department':      r.department,
+      'Year':            r.year,
+      'Section':         r.section,
+      'LeetCode':        r.leetcode,
+      'Total Solved':    r.totalSolved,
+      'Solved Today':    r.solvedToday,
+      'Easy':            r.easy,
+      'Medium':          r.medium,
+      'Hard':            r.hard,
+      'Contest Rating':  r.contestRating,
+      'Acceptance %':    r.acceptance.toFixed(1),
+      'Daily Streak':    r.streak,
+      'Last Synced':     r.lastSynced,
+      'Status':          r.isActive ? 'Active' : 'Inactive',
+      'Placement Score': r.placement,
+    }))
+  }, [reportType, sorted, sortedFaculty])
 
   const handleExcelExport = () => {
     try {
       const ws = XLSX.utils.json_to_sheet(exportRows)
       const wb = XLSX.utils.book_new()
-      XLSX.utils.book_append_sheet(wb, ws, 'Students')
-      XLSX.writeFile(wb, `vsb_report_${new Date().toISOString().slice(0, 10)}.xlsx`)
-      toast({ title: 'Excel Exported', description: `${sorted.length} records downloaded.` })
+      const sheetName = reportType === 'faculty-performance' ? 'Faculty Performance' : 'Students'
+      XLSX.utils.book_append_sheet(wb, ws, sheetName)
+      XLSX.writeFile(wb, `vsb_report_${reportType}_${new Date().toISOString().slice(0, 10)}.xlsx`)
+      toast({ title: 'Excel Exported', description: `${exportRows.length} records downloaded.` })
     } catch {
       toast({ title: 'Export Failed', variant: 'destructive' })
     }
   }
 
   const handleCSVExport = () => {
-    downloadCSV(exportRows, `vsb_report_${new Date().toISOString().slice(0, 10)}`)
-    toast({ title: 'CSV Exported', description: `${sorted.length} records downloaded.` })
+    downloadCSV(exportRows, `vsb_report_${reportType}_${new Date().toISOString().slice(0, 10)}`)
+    toast({ title: 'CSV Exported', description: `${exportRows.length} records downloaded.` })
   }
 
   const handlePDFExport = () => {
     try {
       const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' })
       doc.setFontSize(16)
-      doc.text('VSB LeetCode Analytics – Student Performance Report', 14, 14)
-      doc.setFontSize(9)
-      doc.text(`Generated: ${new Date().toLocaleString()} | Total: ${sorted.length} students`, 14, 20)
-
-      autoTable(doc, {
-        startY: 26,
-        head: [['#', 'Name', 'Email', 'Dept', 'Total', 'Easy', 'Med', 'Hard', 'Rating', 'Acc%', 'Streak', 'Status']],
-        body: sorted.map((r, i) => [
-          i + 1, r.name, r.email, r.department,
-          r.totalSolved, r.easy, r.medium, r.hard,
-          r.contestRating, r.acceptance.toFixed(1), r.streak,
-          r.isActive ? 'Active' : 'Inactive',
-        ]),
-        styles: { fontSize: 7, cellPadding: 2 },
-        headStyles: { fillColor: [245, 179, 1], textColor: [17, 24, 39] },
-        alternateRowStyles: { fillColor: [248, 250, 252] },
-      })
-      doc.save(`vsb_report_${new Date().toISOString().slice(0, 10)}.pdf`)
-      toast({ title: 'PDF Exported', description: `${sorted.length} records downloaded.` })
+      
+      if (reportType === 'faculty-performance') {
+        doc.text('VSB LeetCode Analytics – Faculty Performance Report', 14, 14)
+        doc.setFontSize(9)
+        doc.text(`Generated: ${new Date().toLocaleString()} | Total: ${sortedFaculty.length} faculty members`, 14, 20)
+        
+        autoTable(doc, {
+          startY: 26,
+          head: [['#', 'Faculty Name', 'Email', 'Dept', 'Employee ID', 'Sections', 'Students', 'Linked', 'Active %', 'Avg Solved', 'Avg Rating']],
+          body: sortedFaculty.map((f, i) => [
+            i + 1, f.name, f.email, f.department,
+            f.employeeId, f.sections, f.totalStudents,
+            f.linkedProfiles, `${f.activeRate}%`, f.avgSolved, f.avgRating
+          ]),
+          styles: { fontSize: 8, cellPadding: 2 },
+          headStyles: { fillColor: [245, 179, 1], textColor: [17, 24, 39] },
+          alternateRowStyles: { fillColor: [248, 250, 252] },
+        })
+      } else {
+        doc.text('VSB LeetCode Analytics – Student Performance Report', 14, 14)
+        doc.setFontSize(9)
+        doc.text(`Generated: ${new Date().toLocaleString()} | Total: ${sorted.length} students`, 14, 20)
+        
+        autoTable(doc, {
+          startY: 26,
+          head: [['#', 'Name', 'Email', 'Dept', 'Total', 'Easy', 'Med', 'Hard', 'Rating', 'Acc%', 'Streak', 'Status']],
+          body: sorted.map((r, i) => [
+            i + 1, r.name, r.email, r.department,
+            r.totalSolved, r.easy, r.medium, r.hard,
+            r.contestRating, r.acceptance.toFixed(1), r.streak,
+            r.isActive ? 'Active' : 'Inactive',
+          ]),
+          styles: { fontSize: 7, cellPadding: 2 },
+          headStyles: { fillColor: [245, 179, 1], textColor: [17, 24, 39] },
+          alternateRowStyles: { fillColor: [248, 250, 252] },
+        })
+      }
+      
+      doc.save(`vsb_report_${reportType}_${new Date().toISOString().slice(0, 10)}.pdf`)
+      toast({ title: 'PDF Exported', description: `${exportRows.length} records downloaded.` })
     } catch {
       toast({ title: 'PDF Export Failed', variant: 'destructive' })
     }
@@ -380,7 +491,9 @@ export default function AdminReportsPage() {
           )}
 
           <span className="text-xs text-muted-foreground ml-auto">
-            {sorted.length} of {rows.length} students
+            {reportType === 'faculty-performance'
+              ? `${sortedFaculty.length} of ${facultyRows.length} faculty`
+              : `${sorted.length} of ${rows.length} students`}
           </span>
         </div>
 
@@ -476,7 +589,7 @@ export default function AdminReportsPage() {
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center gap-2 text-sm">
                 <BarChart3 className="w-4 h-4 text-primary" />
-                {REPORT_TYPES.find(r => r.id === reportType)?.label} — {sorted.length} Records
+                {REPORT_TYPES.find(r => r.id === reportType)?.label} — {reportType === 'faculty-performance' ? sortedFaculty.length : sorted.length} Records
               </CardTitle>
               <div className="flex items-center gap-2">
                 <Clock className="w-3.5 h-3.5 text-muted-foreground" />
@@ -501,215 +614,276 @@ export default function AdminReportsPage() {
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-border bg-muted/40">
-                      <th className="px-3 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider w-10">#</th>
-                      <SortTh label="Student"        k="name"          />
-                      <SortTh label="Dept"           k="department"    />
-                      <SortTh label="Year"           k="year"          />
-                      <SortTh label="Section"        k="section"       />
-                      <SortTh label="LeetCode"       k="leetcode"      />
-                      <SortTh label="Total"          k="totalSolved"   />
-                      <SortTh label="Today"          k="solvedToday"   />
-                      <SortTh label="Easy"           k="easy"          />
-                      <SortTh label="Medium"         k="medium"        />
-                      <SortTh label="Hard"           k="hard"          />
-                      <SortTh label="Rating"         k="contestRating" />
-                      <SortTh label="Acc %"          k="acceptance"    />
-                      <SortTh label="Streak"         k="streak"        />
-                      {reportType === 'placement-readiness' && <SortTh label="Placement" k="placement" />}
-                      <th className="px-3 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Last Sync</th>
-                      <th className="px-3 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Status</th>
-                      <th className="px-3 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border">
-                    {paginated.length === 0 ? (
-                      <tr>
-                        <td colSpan={20} className="px-4 py-16 text-center">
-                          <div className="flex flex-col items-center gap-3">
-                            <FileText className="w-10 h-10 text-muted-foreground/30" />
-                            <p className="text-muted-foreground text-sm font-medium">No students match your filters</p>
-                            <button onClick={clearFilters} className="text-xs text-primary hover:underline">Clear all filters</button>
-                          </div>
-                        </td>
-                      </tr>
-                    ) : (
-                      paginated.map((r, i) => (
-                        <tr key={r.id} className="hover:bg-accent/30 transition-colors group">
-                          {/* # */}
-                          <td className="px-3 py-3 text-xs text-muted-foreground font-mono">
-                            {(page - 1) * PAGE_SIZE + i + 1}
-                          </td>
-
-                          {/* Student */}
-                          <td className="px-3 py-3 min-w-[180px]">
-                            <div className="flex items-center gap-2.5">
-                              <Avatar fallback={getInitials(r.name)} size="sm" />
-                              <div>
-                                <p className="font-semibold text-sm leading-tight">{r.name}</p>
-                                <p className="text-xs text-muted-foreground truncate max-w-[160px]">{r.email}</p>
-                                {r.rollNo !== '—' && (
-                                  <p className="text-xs font-mono text-muted-foreground/60">{r.rollNo}</p>
-                                )}
-                              </div>
-                            </div>
-                          </td>
-
-                          {/* Dept */}
-                          <td className="px-3 py-3">
-                            <Badge variant="secondary" className="text-xs font-semibold">{r.department}</Badge>
-                          </td>
-
-                          {/* Year */}
-                          <td className="px-3 py-3 text-xs text-center font-medium">{r.year}</td>
-
-                          {/* Section */}
-                          <td className="px-3 py-3 text-xs text-center">{r.section}</td>
-
-                          {/* LeetCode */}
-                          <td className="px-3 py-3">
-                            {r.leetcode !== '—' ? (
-                              <a
-                                href={`https://leetcode.com/${r.leetcode}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-xs font-mono font-semibold hover:underline"
-                                style={{ color: GOLD }}
-                              >
-                                {r.leetcode}
-                              </a>
-                            ) : (
-                              <span className="text-xs text-muted-foreground italic">Unlinked</span>
-                            )}
-                          </td>
-
-                          {/* Total Solved */}
-                          <td className="px-3 py-3 text-center">
-                            <span className="font-bold text-sm">{r.totalSolved}</span>
-                          </td>
-
-                          {/* Today */}
-                          <td className="px-3 py-3 text-center">
-                            <span className={`text-xs font-bold ${r.solvedToday > 0 ? 'text-success' : 'text-muted-foreground'}`}>
-                              {r.solvedToday > 0 ? `+${r.solvedToday}` : '0'}
-                            </span>
-                          </td>
-
-                          {/* Easy */}
-                          <td className="px-3 py-3 text-center">
-                            <span className="text-xs font-semibold text-emerald-500">{r.easy}</span>
-                          </td>
-
-                          {/* Medium */}
-                          <td className="px-3 py-3 text-center">
-                            <span className="text-xs font-semibold text-amber-500">{r.medium}</span>
-                          </td>
-
-                          {/* Hard */}
-                          <td className="px-3 py-3 text-center">
-                            <span className="text-xs font-semibold text-red-500">{r.hard}</span>
-                          </td>
-
-                          {/* Contest Rating */}
-                          <td className="px-3 py-3 text-center">
-                            {r.contestRating > 0 ? (
-                              <span className="text-xs font-bold" style={{ color: GOLD }}>{r.contestRating}</span>
-                            ) : (
-                              <span className="text-xs text-muted-foreground">—</span>
-                            )}
-                          </td>
-
-                          {/* Acceptance */}
-                          <td className="px-3 py-3 text-center">
-                            <span className="text-xs">{fmt(r.acceptance, 1)}%</span>
-                          </td>
-
-                          {/* Streak */}
-                          <td className="px-3 py-3 text-center">
-                            {r.streak > 0 ? (
-                              <span className="inline-flex items-center gap-1 text-xs font-semibold text-orange-500">
-                                🔥 {r.streak}d
-                              </span>
-                            ) : (
-                              <span className="text-xs text-muted-foreground">—</span>
-                            )}
-                          </td>
-
-                          {/* Placement score (conditional) */}
-                          {reportType === 'placement-readiness' && (
-                            <td className="px-3 py-3 text-center">
-                              <div className="flex flex-col items-center gap-1">
-                                <span className="text-sm font-bold">{r.placement}%</span>
-                                <div className="w-16 h-1.5 rounded-full bg-muted overflow-hidden">
-                                  <div
-                                    className="h-full rounded-full transition-all"
-                                    style={{
-                                      width: `${r.placement}%`,
-                                      background: r.placement >= 70 ? '#22C55E' : r.placement >= 40 ? GOLD : '#EF4444',
-                                    }}
-                                  />
-                                </div>
+                  {reportType === 'faculty-performance' ? (
+                    <>
+                      <thead>
+                        <tr className="border-b border-border bg-muted/40">
+                          <th className="px-3 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider w-10">#</th>
+                          <SortTh label="Faculty" k="name" />
+                          <SortTh label="Dept" k="department" />
+                          <SortTh label="Employee ID" k="employeeId" />
+                          <SortTh label="Sections" k="sections" />
+                          <SortTh label="Total Students" k="totalStudents" />
+                          <SortTh label="Linked Profiles" k="linkedProfiles" />
+                          <SortTh label="Active Rate %" k="activeRate" />
+                          <SortTh label="Avg Solved" k="avgSolved" />
+                          <SortTh label="Avg Rating" k="avgRating" />
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-border">
+                        {paginatedFaculty.length === 0 ? (
+                          <tr>
+                            <td colSpan={10} className="px-4 py-16 text-center">
+                              <div className="flex flex-col items-center gap-3">
+                                <FileText className="w-10 h-10 text-muted-foreground/30" />
+                                <p className="text-muted-foreground text-sm font-medium">No faculty members found</p>
                               </div>
                             </td>
-                          )}
-
-                          {/* Last Sync */}
-                          <td className="px-3 py-3">
-                            <span className="text-xs text-muted-foreground whitespace-nowrap">{r.lastSynced}</span>
-                          </td>
-
-                          {/* Status */}
-                          <td className="px-3 py-3">
-                            {r.isActive ? (
-                              <span className="inline-flex items-center gap-1 text-xs font-semibold text-success">
-                                <CheckCircle2 className="w-3 h-3" /> Active
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center gap-1 text-xs font-semibold text-error">
-                                <XCircle className="w-3 h-3" /> Inactive
-                              </span>
-                            )}
-                          </td>
-
-                          {/* Row Actions */}
-                          <td className="px-3 py-3">
-                            <div className="flex items-center gap-1 opacity-70 group-hover:opacity-100 transition-opacity">
-                              <button
-                                title="View Details"
-                                onClick={() => { setSelectedStudent(r); setActiveModalTab('details') }}
-                                className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
-                              >
-                                <Eye className="w-3.5 h-3.5" />
-                              </button>
-                              <button
-                                title="View Analytics"
-                                onClick={() => { setSelectedStudent(r); setActiveModalTab('analytics') }}
-                                className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-muted transition-colors text-blue-500 hover:text-blue-600"
-                              >
-                                <BarChart3 className="w-3.5 h-3.5" />
-                              </button>
-                              <button
-                                title="Sync LeetCode Data"
-                                onClick={() => r.leetcode !== '—' && syncMutation.mutate(r.id)}
-                                disabled={r.leetcode === '—' || syncMutation.isPending}
-                                className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-muted transition-colors text-success hover:text-success/80 disabled:opacity-30"
-                              >
-                                <RefreshCw className="w-3.5 h-3.5" />
-                              </button>
-                              <button
-                                title="Download Report"
-                                onClick={() => downloadCSV([exportRows[(page-1)*PAGE_SIZE+i]], `${r.name.replace(/ /g,'_')}_report`)}
-                                className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-muted transition-colors text-primary hover:text-primary-hover"
-                              >
-                                <FileText className="w-3.5 h-3.5" />
-                              </button>
-                            </div>
-                          </td>
+                          </tr>
+                        ) : (
+                          paginatedFaculty.map((f, i) => (
+                            <tr key={f.id} className="hover:bg-accent/30 transition-colors group">
+                              <td className="px-3 py-3 text-xs text-muted-foreground font-mono">
+                                {(page - 1) * PAGE_SIZE + i + 1}
+                              </td>
+                              <td className="px-3 py-3 font-semibold text-foreground">
+                                <div>
+                                  <p className="font-semibold text-sm leading-tight">{f.name}</p>
+                                  <p className="text-xs text-muted-foreground truncate max-w-[180px]">{f.email}</p>
+                                </div>
+                              </td>
+                              <td className="px-3 py-3">
+                                <Badge variant="secondary" className="text-xs font-semibold">{f.department}</Badge>
+                              </td>
+                              <td className="px-3 py-3 font-mono text-xs">{f.employeeId}</td>
+                              <td className="px-3 py-3 font-medium text-xs">{f.sections}</td>
+                              <td className="px-3 py-3 text-center text-sm font-semibold">{f.totalStudents}</td>
+                              <td className="px-3 py-3 text-center text-sm">{f.linkedProfiles}</td>
+                              <td className="px-3 py-3 text-center">
+                                <Badge variant={f.activeRate >= 80 ? 'success' : f.activeRate >= 50 ? 'warning' : 'error'} className="text-xs">
+                                  {f.activeRate}%
+                                </Badge>
+                              </td>
+                              <td className="px-3 py-3 text-center font-bold text-sm text-primary">{f.avgSolved}</td>
+                              <td className="px-3 py-3 text-center font-bold text-sm text-warning">{f.avgRating}</td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </>
+                  ) : (
+                    <>
+                      <thead>
+                        <tr className="border-b border-border bg-muted/40">
+                          <th className="px-3 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider w-10">#</th>
+                          <SortTh label="Student"        k="name"          />
+                          <SortTh label="Dept"           k="department"    />
+                          <SortTh label="Year"           k="year"          />
+                          <SortTh label="Section"        k="section"       />
+                          <SortTh label="LeetCode"       k="leetcode"      />
+                          <SortTh label="Total"          k="totalSolved"   />
+                          <SortTh label="Today"          k="solvedToday"   />
+                          <SortTh label="Easy"           k="easy"          />
+                          <SortTh label="Medium"         k="medium"        />
+                          <SortTh label="Hard"           k="hard"          />
+                          <SortTh label="Rating"         k="contestRating" />
+                          <SortTh label="Acc %"          k="acceptance"    />
+                          <SortTh label="Streak"         k="streak"        />
+                          {reportType === 'placement-readiness' && <SortTh label="Placement" k="placement" />}
+                          <th className="px-3 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Last Sync</th>
+                          <th className="px-3 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Status</th>
+                          <th className="px-3 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Actions</th>
                         </tr>
-                      ))
-                    )}
-                  </tbody>
+                      </thead>
+                      <tbody className="divide-y divide-border">
+                        {paginated.length === 0 ? (
+                          <tr>
+                            <td colSpan={20} className="px-4 py-16 text-center">
+                              <div className="flex flex-col items-center gap-3">
+                                <FileText className="w-10 h-10 text-muted-foreground/30" />
+                                <p className="text-muted-foreground text-sm font-medium">No students match your filters</p>
+                                <button onClick={clearFilters} className="text-xs text-primary hover:underline">Clear all filters</button>
+                              </div>
+                            </td>
+                          </tr>
+                        ) : (
+                          paginated.map((r, i) => (
+                            <tr key={r.id} className="hover:bg-accent/30 transition-colors group">
+                              {/* # */}
+                              <td className="px-3 py-3 text-xs text-muted-foreground font-mono">
+                                {(page - 1) * PAGE_SIZE + i + 1}
+                              </td>
+
+                              {/* Student */}
+                              <td className="px-3 py-3 min-w-[180px]">
+                                <div className="flex items-center gap-2.5">
+                                  <Avatar fallback={getInitials(r.name)} size="sm" />
+                                  <div>
+                                    <p className="font-semibold text-sm leading-tight">{r.name}</p>
+                                    <p className="text-xs text-muted-foreground truncate max-w-[160px]">{r.email}</p>
+                                    {r.rollNo !== '—' && (
+                                      <p className="text-xs font-mono text-muted-foreground/60">{r.rollNo}</p>
+                                    )}
+                                  </div>
+                                </div>
+                              </td>
+
+                              {/* Dept */}
+                              <td className="px-3 py-3">
+                                <Badge variant="secondary" className="text-xs font-semibold">{r.department}</Badge>
+                              </td>
+
+                              {/* Year */}
+                              <td className="px-3 py-3 text-xs text-center font-medium">{r.year}</td>
+
+                              {/* Section */}
+                              <td className="px-3 py-3 text-xs text-center">{r.section}</td>
+
+                              {/* LeetCode */}
+                              <td className="px-3 py-3">
+                                {r.leetcode !== '—' ? (
+                                  <a
+                                    href={`https://leetcode.com/${r.leetcode}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-xs font-mono font-semibold hover:underline"
+                                    style={{ color: GOLD }}
+                                  >
+                                    {r.leetcode}
+                                  </a>
+                                ) : (
+                                  <span className="text-xs text-muted-foreground italic">Unlinked</span>
+                                )}
+                              </td>
+
+                              {/* Total Solved */}
+                              <td className="px-3 py-3 text-center">
+                                <span className="font-bold text-sm">{r.totalSolved}</span>
+                              </td>
+
+                              {/* Today */}
+                              <td className="px-3 py-3 text-center">
+                                <span className={`text-xs font-bold ${r.solvedToday > 0 ? 'text-success' : 'text-muted-foreground'}`}>
+                                  {r.solvedToday > 0 ? `+${r.solvedToday}` : '0'}
+                                </span>
+                              </td>
+
+                              {/* Easy */}
+                              <td className="px-3 py-3 text-center">
+                                <span className="text-xs font-semibold text-emerald-500">{r.easy}</span>
+                              </td>
+
+                              {/* Medium */}
+                              <td className="px-3 py-3 text-center">
+                                <span className="text-xs font-semibold text-amber-500">{r.medium}</span>
+                              </td>
+
+                              {/* Hard */}
+                              <td className="px-3 py-3 text-center">
+                                <span className="text-xs font-semibold text-red-500">{r.hard}</span>
+                              </td>
+
+                              {/* Contest Rating */}
+                              <td className="px-3 py-3 text-center">
+                                {r.contestRating > 0 ? (
+                                  <span className="text-xs font-bold" style={{ color: GOLD }}>{r.contestRating}</span>
+                                ) : (
+                                  <span className="text-xs text-muted-foreground">—</span>
+                                )}
+                              </td>
+
+                              {/* Acceptance */}
+                              <td className="px-3 py-3 text-center">
+                                <span className="text-xs">{fmt(r.acceptance, 1)}%</span>
+                              </td>
+
+                              {/* Streak */}
+                              <td className="px-3 py-3 text-center">
+                                {r.streak > 0 ? (
+                                  <span className="inline-flex items-center gap-1 text-xs font-semibold text-orange-500">
+                                    🔥 {r.streak}d
+                                  </span>
+                                ) : (
+                                  <span className="text-xs text-muted-foreground">—</span>
+                                )}
+                              </td>
+
+                              {/* Placement score (conditional) */}
+                              {reportType === 'placement-readiness' && (
+                                <td className="px-3 py-3 text-center">
+                                  <div className="flex flex-col items-center gap-1">
+                                    <span className="text-sm font-bold">{r.placement}%</span>
+                                    <div className="w-16 h-1.5 rounded-full bg-muted overflow-hidden">
+                                      <div
+                                        className="h-full rounded-full transition-all"
+                                        style={{
+                                          width: `${r.placement}%`,
+                                          background: r.placement >= 70 ? '#22C55E' : r.placement >= 40 ? GOLD : '#EF4444',
+                                        }}
+                                      />
+                                    </div>
+                                  </div>
+                                </td>
+                              )}
+
+                              {/* Last Sync */}
+                              <td className="px-3 py-3">
+                                <span className="text-xs text-muted-foreground whitespace-nowrap">{r.lastSynced}</span>
+                              </td>
+
+                              {/* Status */}
+                              <td className="px-3 py-3">
+                                {r.isActive ? (
+                                  <span className="inline-flex items-center gap-1 text-xs font-semibold text-success">
+                                    <CheckCircle2 className="w-3 h-3" /> Active
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center gap-1 text-xs font-semibold text-error">
+                                    <XCircle className="w-3 h-3" /> Inactive
+                                  </span>
+                                )}
+                              </td>
+
+                              {/* Row Actions */}
+                              <td className="px-3 py-3">
+                                <div className="flex items-center gap-1 opacity-70 group-hover:opacity-100 transition-opacity">
+                                  <button
+                                    title="View Details"
+                                    onClick={() => { setSelectedStudent(r); setActiveModalTab('details') }}
+                                    className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
+                                  >
+                                    <Eye className="w-3.5 h-3.5" />
+                                  </button>
+                                  <button
+                                    title="View Analytics"
+                                    onClick={() => { setSelectedStudent(r); setActiveModalTab('analytics') }}
+                                    className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-muted transition-colors text-blue-500 hover:text-blue-600"
+                                  >
+                                    <BarChart3 className="w-3.5 h-3.5" />
+                                  </button>
+                                  <button
+                                    title="Sync LeetCode Data"
+                                    onClick={() => r.leetcode !== '—' && syncMutation.mutate(r.id)}
+                                    disabled={r.leetcode === '—' || syncMutation.isPending}
+                                    className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-muted transition-colors text-success hover:text-success/80 disabled:opacity-30"
+                                  >
+                                    <RefreshCw className="w-3.5 h-3.5" />
+                                  </button>
+                                  <button
+                                    title="Download Report"
+                                    onClick={() => downloadCSV([exportRows[(page-1)*PAGE_SIZE+i]], `${r.name.replace(/ /g,'_')}_report`)}
+                                    className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-muted transition-colors text-primary hover:text-primary-hover"
+                                  >
+                                    <FileText className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </>
+                  )}
                 </table>
               </div>
             )}
@@ -718,7 +892,7 @@ export default function AdminReportsPage() {
             {totalPages > 1 && (
               <div className="flex items-center justify-between px-4 py-3 border-t border-border">
                 <p className="text-xs text-muted-foreground">
-                  Showing {Math.min((page - 1) * PAGE_SIZE + 1, sorted.length)}–{Math.min(page * PAGE_SIZE, sorted.length)} of {sorted.length}
+                  Showing {Math.min((page - 1) * PAGE_SIZE + 1, reportType === 'faculty-performance' ? sortedFaculty.length : sorted.length)}–{Math.min(page * PAGE_SIZE, reportType === 'faculty-performance' ? sortedFaculty.length : sorted.length)} of {reportType === 'faculty-performance' ? sortedFaculty.length : sorted.length}
                 </p>
                 <div className="flex items-center gap-1">
                   <button onClick={() => setPage(1)} disabled={page === 1} className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-muted disabled:opacity-30 transition-colors">

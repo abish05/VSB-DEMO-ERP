@@ -452,6 +452,13 @@ router.get('/users', async (req: Request, res: Response) => {
         department: true,
         section: {
           include: {
+            faculty: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+              }
+            },
             batch: {
               include: {
                 academicYear: true

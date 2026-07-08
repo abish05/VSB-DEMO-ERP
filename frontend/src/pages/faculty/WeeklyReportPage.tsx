@@ -7,6 +7,8 @@ import { leetcodeService } from '@/services/leetcode.service'
 import type { UserProfile } from '@/types'
 import { RefreshCw, Download, FileSpreadsheet, FileText, Search, UserCheck, AlertTriangle } from 'lucide-react'
 import * as XLSX from 'xlsx'
+import jsPDF from 'jspdf'
+import autoTable from 'jspdf-autotable'
 
 const cv = { hidden: {}, show: { transition: { staggerChildren: 0.06 } } }
 const iv = { hidden: { opacity: 0, y: 14 }, show: { opacity: 1, y: 0, transition: { duration: 0.3 } } }
@@ -67,6 +69,42 @@ export default function FacultyReportsPage() {
     XLSX.writeFile(wb, `student_performance_report_${new Date().toISOString().slice(0, 10)}.xlsx`)
   }
 
+  const exportAllToPDF = () => {
+    try {
+      const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' })
+      doc.setFontSize(16)
+      doc.text('VSB LeetCode Analytics – Student Performance Report', 14, 14)
+      doc.setFontSize(9)
+      doc.text(`Generated: ${new Date().toLocaleString()} | Total: ${filtered.length} students`, 14, 20)
+
+      autoTable(doc, {
+        startY: 26,
+        head: [['#', 'Name', 'Roll No', 'Email', 'LeetCode Username', 'Total', 'Easy', 'Med', 'Hard', 'Rating', 'Streak', 'Weekly', 'Monthly']],
+        body: filtered.map((s, idx) => [
+          idx + 1,
+          s.name,
+          s.rollNo || 'N/A',
+          s.email,
+          s.leetcodeProfile?.username || 'Not Linked',
+          s.leetcodeProfile?.totalSolved ?? 0,
+          s.leetcodeProfile?.easySolved ?? 0,
+          s.leetcodeProfile?.mediumSolved ?? 0,
+          s.leetcodeProfile?.hardSolved ?? 0,
+          Math.round(s.leetcodeProfile?.contestRating ?? 0),
+          s.leetcodeProfile?.currentStreak ?? 0,
+          s.leetcodeProfile?.weeklySolvedCount ?? 0,
+          s.leetcodeProfile?.monthlySolvedCount ?? 0
+        ]),
+        styles: { fontSize: 7, cellPadding: 2 },
+        headStyles: { fillColor: [245, 179, 1], textColor: [17, 24, 39] },
+        alternateRowStyles: { fillColor: [248, 250, 252] },
+      })
+      doc.save(`student_performance_report_${new Date().toISOString().slice(0, 10)}.pdf`)
+    } catch (e) {
+      console.error(e)
+    }
+  }
+
   if (loading) {
     return (
       <div className="space-y-6 animate-pulse">
@@ -89,8 +127,11 @@ export default function FacultyReportsPage() {
           <p className="text-muted-foreground text-sm mt-1">Generate and export student LeetCode metrics</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="default" size="sm" className="gap-2" onClick={exportAllToExcel}>
+          <Button variant="outline" size="sm" className="gap-2 border-primary text-primary hover:bg-primary/10" onClick={exportAllToExcel}>
             <FileSpreadsheet className="w-3.5 h-3.5" /> Export Excel
+          </Button>
+          <Button variant="default" size="sm" className="gap-2" onClick={exportAllToPDF}>
+            <FileText className="w-3.5 h-3.5" /> Export PDF
           </Button>
           <Button variant="outline" size="sm" className="gap-2" onClick={load} isLoading={loading}>
             <RefreshCw className="w-3.5 h-3.5" /> Refresh

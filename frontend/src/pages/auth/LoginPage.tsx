@@ -178,12 +178,12 @@ export default function LoginPage() {
 
         {/* Brand */}
         <div className="relative z-10 flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-md" style={{ background: C.gold }}>
-            <BarChart2 className="w-5 h-5" style={{ color: C.darkBg }} />
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-md bg-white p-1 overflow-hidden">
+            <img src="/logo.png" alt="VSBCETC Logo" className="w-full h-full object-contain" />
           </div>
           <div>
-            <p className="font-bold text-base leading-tight" style={{ color: C.darkBg }}>CodePulse AI</p>
-            <p className="text-xs font-medium" style={{ color: `${C.darkBg}99` }}>VSBCETC</p>
+            <p className="font-bold text-base leading-tight" style={{ color: C.darkBg }}>VSB College of engineering Technical campus</p>
+            <p className="text-xs font-medium" style={{ color: `${C.darkBg}99` }}>Coimbatore</p>
           </div>
         </div>
 
@@ -229,7 +229,7 @@ export default function LoginPage() {
         </div>
 
         <p className="relative z-10 text-xs" style={{ color: `${C.darkBg}66` }}>
-          © 2025 CodePulse AI ·VSBCETC .{' '}
+          © 2025 VSB College of engineering Technical campus ·VSBCETC .{' '}
           <span className="font-medium" style={{ color: C.gold }}>All rights reserved.</span>
         </p>
       </motion.div>
@@ -241,10 +241,10 @@ export default function LoginPage() {
       >
         {/* Mobile logo */}
         <div className="flex items-center gap-3 mb-8 lg:hidden">
-          <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: C.gold }}>
-            <BarChart2 className="w-4 h-4" style={{ color: C.darkBg }} />
+          <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-white p-1 overflow-hidden">
+            <img src="/logo.png" alt="VSBCETC Logo" className="w-full h-full object-contain" />
           </div>
-          <p className="font-bold text-white text-base">CodePulse AI</p>
+          <p className="font-bold text-white text-base">VSB College of engineering Technical campus</p>
         </div>
 
         <motion.div
@@ -352,9 +352,8 @@ export default function LoginPage() {
                 <input
                   type="text"
                   placeholder={tab === 'student' ? 'student1@vsb.edu.in or student1' : 'staff@vsbcetc.edu.in'}
-                  className={`${inputClass} border bg-[#243447] text-white focus:border-[#F5B301] focus:ring-1 focus:ring-[#F5B301]/30 ${
-                    errors.email ? 'border-[#EF4444]' : 'border-[#334155]'
-                  }`}
+                  className={`${inputClass} border bg-[#243447] text-white focus:border-[#F5B301] focus:ring-1 focus:ring-[#F5B301]/30 ${errors.email ? 'border-[#EF4444]' : 'border-[#334155]'
+                    }`}
                   {...register('email')}
                 />
               </div>
@@ -374,9 +373,8 @@ export default function LoginPage() {
                 <input
                   type={showPassword ? 'text' : 'password'}
                   placeholder="••••••••"
-                  className={`${inputClass} pr-11 border bg-[#243447] text-white focus:border-[#F5B301] focus:ring-1 focus:ring-[#F5B301]/30 ${
-                    errors.password ? 'border-[#EF4444]' : 'border-[#334155]'
-                  }`}
+                  className={`${inputClass} pr-11 border bg-[#243447] text-white focus:border-[#F5B301] focus:ring-1 focus:ring-[#F5B301]/30 ${errors.password ? 'border-[#EF4444]' : 'border-[#334155]'
+                    }`}
                   {...register('password')}
                 />
                 <button

@@ -23,21 +23,26 @@ export default function FacultyContestHistoryPage() {
 
   useEffect(() => { void load() }, [load])
 
-  const withRating = useMemo(() =>
-    students.filter(s => s.leetcodeProfile && (s.leetcodeProfile.contestRating ?? 0) > 0)
+  const withProfile = useMemo(() =>
+    students.filter(s => s.leetcodeProfile)
   , [students])
 
+  const ratedStudents = useMemo(() =>
+    withProfile.filter(s => (s.leetcodeProfile?.contestRating ?? 0) > 0)
+  , [withProfile])
+
   const filtered = useMemo(() =>
-    [...withRating]
+    [...withProfile]
       .filter(s => search === '' || s.name.toLowerCase().includes(search.toLowerCase()) || (s.rollNo || '').toLowerCase().includes(search.toLowerCase()))
       .sort((a, b) => (b.leetcodeProfile?.contestRating ?? 0) - (a.leetcodeProfile?.contestRating ?? 0))
-  , [withRating, search])
+  , [withProfile, search])
 
-  const avgRating = withRating.length
-    ? Math.round(withRating.reduce((s, u) => s + (u.leetcodeProfile?.contestRating ?? 0), 0) / withRating.length)
+  const avgRating = ratedStudents.length
+    ? Math.round(ratedStudents.reduce((s, u) => s + (u.leetcodeProfile?.contestRating ?? 0), 0) / ratedStudents.length)
     : 0
 
-  const totalContests = withRating.reduce((s, u) => s + (u.leetcodeProfile?.totalContestsParticipated ?? 0), 0)
+  const totalContests = withProfile.reduce((s, u) => s + (u.leetcodeProfile?.totalContestsParticipated ?? 0), 0)
+  const bestRating = withProfile.length ? Math.max(...withProfile.map(s => s.leetcodeProfile?.contestRating ?? 0)) : 0
 
   if (loading) return <div className="space-y-6 animate-pulse"><div className="h-40 rounded-xl bg-muted/20"/><div className="h-64 rounded-xl bg-muted/20"/></div>
 
@@ -53,10 +58,10 @@ export default function FacultyContestHistoryPage() {
 
       <motion.div variants={iv} className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
-          { label: 'Rated Students', value: withRating.length, icon: <Trophy className="w-5 h-5"/>, color: 'bg-warning/10 text-warning', sub: 'With contest rating' },
+          { label: 'Rated Students', value: ratedStudents.length, icon: <Trophy className="w-5 h-5"/>, color: 'bg-warning/10 text-warning', sub: 'With contest rating' },
           { label: 'Avg Rating', value: avgRating, icon: <TrendingUp className="w-5 h-5"/>, color: 'bg-primary/10 text-primary', sub: 'Section average' },
           { label: 'Total Contests', value: totalContests, icon: <Users className="w-5 h-5"/>, color: 'bg-success/10 text-success', sub: 'Participations' },
-          { label: 'Best Rating', value: Math.round(Math.max(...withRating.map(s => s.leetcodeProfile?.contestRating ?? 0), 0)), icon: <Trophy className="w-5 h-5"/>, color: 'bg-yellow-500/10 text-yellow-400', sub: 'Top in section' },
+          { label: 'Best Rating', value: Math.round(bestRating), icon: <Trophy className="w-5 h-5"/>, color: 'bg-yellow-500/10 text-yellow-400', sub: 'Top in section' },
         ].map(c => (
           <div key={c.label} className="stat-card flex flex-col gap-3">
             <div className="flex items-start justify-between">
