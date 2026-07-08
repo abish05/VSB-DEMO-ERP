@@ -59,7 +59,7 @@ export default function AdminNotificationsPage() {
   const [message, setMessage] = useState('')
   const [category, setCategory] = useState('Academic Announcement')
   const [priority, setPriority] = useState<'High' | 'Medium' | 'Low'>('Medium')
-  
+
   // Target filters selections
   const [targetRole, setTargetRole] = useState('ALL')
   const [targetDept, setTargetDept] = useState('ALL')
@@ -80,7 +80,7 @@ export default function AdminNotificationsPage() {
   // ─── Mock History Logs State ──────────────────────────────────
   const [broadcasts, setBroadcasts] = useState<NotificationBroadcast[]>([
     { id: 'bc-1', title: 'Weekly LeetCode Leaderboard Out!', subject: 'Check your department ranks', category: 'Coding Contest', priority: 'Medium', sender: 'Placement Cell', target: 'All Students', sentTime: 'Today, 10:15 AM', status: 'Delivered', readCount: 384, totalCount: 412 },
-    { id: 'bc-2', title: 'Placement Drive: CodePulse AI Recruiting', subject: 'Eligibility criteria details', category: 'Placement Drive', priority: 'High', sender: 'Officer Sundaram', target: 'CSE & IT (Year 4)', sentTime: 'Yesterday, 02:30 PM', status: 'Delivered', readCount: 180, totalCount: 195 },
+    { id: 'bc-2', title: 'Placement Drive: VSB College of engineering Technical campus Recruiting', subject: 'Eligibility criteria details', category: 'Placement Drive', priority: 'High', sender: 'Officer Sundaram', target: 'CSE & IT (Year 4)', sentTime: 'Yesterday, 02:30 PM', status: 'Delivered', readCount: 180, totalCount: 195 },
     { id: 'bc-3', title: 'Semester Lab Examination Schedule', subject: 'Dates sheets PDF appended', category: 'Academic Announcement', priority: 'High', sender: 'HOD Office', target: 'All Students', sentTime: 'Jul 06, 09:00 AM', status: 'Delivered', readCount: 310, totalCount: 412 },
     { id: 'bc-4', title: 'System Maintenance Scheduled Downtime', subject: 'In-app statistics sync freeze', category: 'System Maintenance', priority: 'Low', sender: 'Super Admin', target: 'All Users', sentTime: 'Scheduled for tonight', status: 'Scheduled', readCount: 0, totalCount: 520 },
   ])
