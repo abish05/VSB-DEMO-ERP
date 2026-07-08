@@ -8,7 +8,7 @@ import { DataTable } from '@/components/tables/DataTable'
 import { useAuth } from '@/hooks/useAuth'
 import { leetcodeService } from '@/services/leetcode.service'
 import type { ContestHistory, LeetCodeProfile, UserProfile } from '@/types'
-import { Code2, Flame, RefreshCw, Target, TrendingUp, Trophy, Users } from 'lucide-react'
+import { Activity, Bell, RefreshCw, TrendingUp, Trophy, Users } from 'lucide-react'
 
 const itemVariants = {
   hidden: { opacity: 0, y: 16 },
@@ -73,13 +73,6 @@ export default function FacultyDashboard() {
     { name: 'Hard', value: profile?.hardSolved || 0, color: '#EF4444' },
   ]
 
-  const personalStats = [
-    { label: 'Total Solved', value: String(profile?.totalSolved || 0), icon: <Code2 className="w-5 h-5" />, color: 'bg-primary/10 text-primary' },
-    { label: 'Current Streak', value: `${profile?.currentStreak || 0} days`, icon: <Flame className="w-5 h-5" />, color: 'bg-warning/10 text-warning' },
-    { label: 'Contest Rating', value: String(Math.round(profile?.contestRating || 0)), icon: <Trophy className="w-5 h-5" />, color: 'bg-success/10 text-success' },
-    { label: 'Global Rank', value: profile?.globalRank ? `#${profile.globalRank}` : 'Unranked', icon: <Target className="w-5 h-5" />, color: 'bg-error/10 text-error' },
-  ]
-
   const studentRows = students.map((student) => ({
     id: student.id,
     rollNo: student.rollNo || '-',
@@ -89,6 +82,17 @@ export default function FacultyDashboard() {
     rating: Math.round(student.leetcodeProfile?.contestRating || 0),
     status: student.leetcodeProfile?.lastSyncedAt ? 'SYNCED' : 'PENDING',
   }))
+
+  const activeStudents = studentRows.filter((student) => student.status === 'SYNCED').length
+  const totalSolvedByStudents = studentRows.reduce((total, student) => total + student.solved, 0)
+  const topPerformer = studentRows.slice().sort((a, b) => b.solved - a.solved)[0]
+  const overviewStats = [
+    { label: 'Total Students', value: String(students.length), sub: 'Assigned students', icon: <Users className="w-5 h-5" />, color: 'bg-primary/10 text-primary' },
+    { label: 'Active Students', value: String(activeStudents), sub: 'Synced LeetCode profiles', icon: <Activity className="w-5 h-5" />, color: 'bg-success/10 text-success' },
+    { label: 'Daily Activity Summary', value: String(totalSolvedByStudents), sub: 'Total solved by assigned students', icon: <TrendingUp className="w-5 h-5" />, color: 'bg-warning/10 text-warning' },
+    { label: 'Top Performers', value: topPerformer?.name || 'No data', sub: topPerformer ? `${topPerformer.solved} solved` : 'Awaiting submissions', icon: <Trophy className="w-5 h-5" />, color: 'bg-error/10 text-error' },
+    { label: 'Recent Notifications', value: '0', sub: 'No unread alerts', icon: <Bell className="w-5 h-5" />, color: 'bg-primary/10 text-primary' },
+  ]
 
   const handleSync = async () => {
     if (!user?.id || !profile) return
@@ -125,15 +129,16 @@ export default function FacultyDashboard() {
       {message && <div className="text-sm bg-primary/10 border border-primary/20 rounded-lg px-3 py-2">{message}</div>}
 
       <motion.div variants={itemVariants}>
-        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">My LeetCode Stats</p>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          {personalStats.map((s) => (
+        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Dashboard Overview</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4">
+          {overviewStats.map((s) => (
             <div key={s.label} className="stat-card">
               <div className="flex items-start justify-between mb-3">
                 <p className="text-sm text-muted-foreground">{s.label}</p>
                 <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${s.color}`}>{s.icon}</div>
               </div>
-              <p className="text-2xl font-bold">{s.value}</p>
+              <p className="text-2xl font-bold truncate">{s.value}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{s.sub}</p>
             </div>
           ))}
         </div>

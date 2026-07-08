@@ -9,16 +9,13 @@ import { useAuth } from '@/hooks/useAuth'
 import { leetcodeService } from '@/services/leetcode.service'
 import type { ContestHistory, LeetCodeProfile, SyncLog } from '@/types'
 import {
-  CheckCircle,
   Clock,
   Code2,
   Flame,
   RefreshCw,
   Star,
-  Target,
   Trophy,
   TrendingUp,
-  Zap,
 } from 'lucide-react'
 
 const containerVariants = { hidden: {}, show: { transition: { staggerChildren: 0.07 } } }
@@ -105,11 +102,8 @@ export default function StudentDashboard() {
     { label: 'Total Solved', value: String(profile?.totalSolved || 0), sub: 'Synced from LeetCode', icon: <Code2 className="w-5 h-5" />, color: 'bg-primary/10 text-primary' },
     { label: 'Current Streak', value: `${profile?.currentStreak || 0} days`, sub: 'Calculated from submissions', icon: <Flame className="w-5 h-5" />, color: 'bg-warning/10 text-warning' },
     { label: 'Contest Rating', value: String(Math.round(profile?.contestRating || 0)), sub: 'Latest contest rating', icon: <Trophy className="w-5 h-5" />, color: 'bg-success/10 text-success' },
-    { label: 'Global Rank', value: profile?.globalRank ? `#${profile.globalRank}` : 'Unranked', sub: 'LeetCode ranking', icon: <Star className="w-5 h-5" />, color: 'bg-error/10 text-error' },
-    { label: 'Easy Solved', value: String(profile?.easySolved || 0), sub: `${profile?.acceptanceRate || 0}% acceptance`, icon: <CheckCircle className="w-5 h-5" />, color: 'bg-success/10 text-success' },
-    { label: 'Medium Solved', value: String(profile?.mediumSolved || 0), sub: 'Synced count', icon: <Target className="w-5 h-5" />, color: 'bg-warning/10 text-warning' },
-    { label: 'Hard Solved', value: String(profile?.hardSolved || 0), sub: 'Synced count', icon: <Zap className="w-5 h-5" />, color: 'bg-error/10 text-error' },
-    { label: 'Longest Streak', value: `${profile?.longestStreak || 0} days`, sub: 'Personal best', icon: <Clock className="w-5 h-5" />, color: 'bg-primary/10 text-primary' },
+    { label: 'Recent Activity', value: String(profile?.recentSubmissions?.length || 0), sub: 'Recent synced submissions', icon: <Clock className="w-5 h-5" />, color: 'bg-primary/10 text-primary' },
+    { label: 'Leaderboard Position', value: profile?.globalRank ? `#${profile.globalRank}` : 'Unranked', sub: 'Current rank snapshot', icon: <Star className="w-5 h-5" />, color: 'bg-error/10 text-error' },
   ]
 
   const handleSync = async () => {
@@ -149,7 +143,9 @@ export default function StudentDashboard() {
 
       {message && <div className="text-sm bg-primary/10 border border-primary/20 rounded-lg px-3 py-2">{message}</div>}
 
-      <motion.div variants={itemVariants} className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <motion.div variants={itemVariants}>
+        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Dashboard Overview</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4">
         {stats.map((s) => (
           <div key={s.label} className="stat-card">
             <div className="flex items-start justify-between mb-3">
@@ -160,6 +156,7 @@ export default function StudentDashboard() {
             <p className="text-xs text-muted-foreground mt-0.5">{s.sub}</p>
           </div>
         ))}
+        </div>
       </motion.div>
 
       <motion.div variants={itemVariants} className="grid grid-cols-1 lg:grid-cols-3 gap-4">

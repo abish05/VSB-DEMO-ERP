@@ -50,6 +50,7 @@ const LeaderboardPage = lazy(() => import('@/pages/student/LeaderboardPage'))
 const ProfilePage = lazy(() => import('@/pages/student/ProfilePage'))
 const NotificationsPage = lazy(() => import('@/pages/student/NotificationsPage'))
 const SettingsPage = lazy(() => import('@/pages/student/SettingsPage'))
+const FeaturePage = lazy(() => import('@/pages/shared/FeaturePage'))
 
 function LoadingFallback() {
   return (
@@ -143,6 +144,7 @@ const router = createBrowserRouter([
       { path: '/faculty/reports/weekly', element: <WeeklyReportPage /> },
       { path: '/faculty/reports/monthly', element: <MonthlyReportPage /> },
       { path: '/faculty/compare', element: <StudentComparePage /> },
+      { path: '/faculty/features/:slug', element: <FeaturePage /> },
     ],
   },
   // Student routes
@@ -161,6 +163,7 @@ const router = createBrowserRouter([
       { path: '/student/profile', element: <ProfilePage /> },
       { path: '/student/notifications', element: <NotificationsPage /> },
       { path: '/student/settings', element: <SettingsPage /> },
+      { path: '/student/features/:slug', element: <FeaturePage /> },
     ],
   },
 ], {

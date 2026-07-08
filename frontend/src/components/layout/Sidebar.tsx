@@ -4,32 +4,27 @@ import { useUIStore } from '@/store/uiStore'
 import { useAuth } from '@/hooks/useAuth'
 import { cn } from '@/lib/utils'
 import {
-  LayoutDashboard,
-  Users,
-  GraduationCap,
-  Building2,
-  BookOpen,
-  Layers,
-  FolderOpen,
-  FileSpreadsheet,
-  Settings,
+  Award,
   BarChart3,
+  Bell,
+  BookOpen,
+  Building2,
+  CalendarDays,
   ChevronLeft,
   ChevronRight,
-  Code2,
-  Trophy,
-  Target,
-  CalendarDays,
-  Bell,
-  UserCircle,
-  TrendingUp,
-  UserX,
+  FileSpreadsheet,
   FileText,
-  GitCompare,
-  BookMarked,
+  FolderOpen,
+  GraduationCap,
+  LayoutDashboard,
+  Layers,
   Medal,
+  Settings,
+  Trophy,
+  UserCircle,
+  Users,
   Activity,
-  Zap,
+  TrendingUp,
 } from 'lucide-react'
 
 interface NavItem {
@@ -56,30 +51,31 @@ const adminNav: NavItem[] = [
   { label: 'Settings', to: '/admin/settings', icon: <Settings className="w-4 h-4" /> },
 ]
 
-const facultyNav: NavItem[] = [
-  { label: 'Dashboard', to: '/faculty/dashboard', icon: <LayoutDashboard className="w-4 h-4" />, end: true },
-  { label: 'My Students', to: '/faculty/students', icon: <Users className="w-4 h-4" /> },
-  { label: 'Progress', to: '/faculty/progress', icon: <TrendingUp className="w-4 h-4" /> },
-  { label: 'Leaderboard', to: '/faculty/leaderboard', icon: <Trophy className="w-4 h-4" /> },
-  { label: 'Inactive Students', to: '/faculty/inactive', icon: <UserX className="w-4 h-4" /> },
-  { label: 'Weekly Report', to: '/faculty/reports/weekly', icon: <FileText className="w-4 h-4" /> },
-  { label: 'Monthly Report', to: '/faculty/reports/monthly', icon: <BarChart3 className="w-4 h-4" /> },
-  { label: 'Compare', to: '/faculty/compare', icon: <GitCompare className="w-4 h-4" /> },
-]
-
 const studentNav: NavItem[] = [
   { label: 'Dashboard', to: '/student/dashboard', icon: <LayoutDashboard className="w-4 h-4" />, end: true },
-  { label: 'My Progress', to: '/student/progress', icon: <Target className="w-4 h-4" /> },
-  { label: 'Calendar', to: '/student/calendar', icon: <CalendarDays className="w-4 h-4" /> },
-  { label: 'Daily Activity', to: '/student/activity/daily', icon: <Activity className="w-4 h-4" /> },
-  { label: 'Weekly Activity', to: '/student/activity/weekly', icon: <Zap className="w-4 h-4" /> },
+  { label: 'Daily Activity', to: '/student/activity/daily', icon: <CalendarDays className="w-4 h-4" /> },
+  { label: 'Weekly Activity', to: '/student/activity/weekly', icon: <BarChart3 className="w-4 h-4" /> },
   { label: 'Monthly Activity', to: '/student/activity/monthly', icon: <TrendingUp className="w-4 h-4" /> },
   { label: 'Contest History', to: '/student/contests', icon: <Trophy className="w-4 h-4" /> },
   { label: 'Badges', to: '/student/badges', icon: <Medal className="w-4 h-4" /> },
-  { label: 'Leaderboard', to: '/student/leaderboard', icon: <BarChart3 className="w-4 h-4" /> },
+  { label: 'Leaderboard', to: '/student/leaderboard', icon: <Award className="w-4 h-4" /> },
   { label: 'Notifications', to: '/student/notifications', icon: <Bell className="w-4 h-4" /> },
   { label: 'Profile', to: '/student/profile', icon: <UserCircle className="w-4 h-4" /> },
   { label: 'Settings', to: '/student/settings', icon: <Settings className="w-4 h-4" /> },
+]
+
+const facultyNav: NavItem[] = [
+  { label: 'Dashboard', to: '/faculty/dashboard', icon: <LayoutDashboard className="w-4 h-4" />, end: true },
+  { label: 'Students', to: '/faculty/students', icon: <Users className="w-4 h-4" /> },
+  { label: 'Daily Activity', to: '/faculty/features/daily-activity', icon: <CalendarDays className="w-4 h-4" /> },
+  { label: 'Weekly Activity', to: '/faculty/reports/weekly', icon: <BarChart3 className="w-4 h-4" /> },
+  { label: 'Monthly Activity', to: '/faculty/reports/monthly', icon: <TrendingUp className="w-4 h-4" /> },
+  { label: 'Contest History', to: '/faculty/features/contest-history', icon: <Trophy className="w-4 h-4" /> },
+  { label: 'Leaderboard', to: '/faculty/leaderboard', icon: <Award className="w-4 h-4" /> },
+  { label: 'Reports', to: '/faculty/reports/weekly', icon: <FileText className="w-4 h-4" /> },
+  { label: 'Notifications', to: '/faculty/features/notifications', icon: <Bell className="w-4 h-4" /> },
+  { label: 'Profile', to: '/faculty/features/profile', icon: <UserCircle className="w-4 h-4" /> },
+  { label: 'Settings', to: '/faculty/features/settings', icon: <Settings className="w-4 h-4" /> },
 ]
 
 export function Sidebar() {
@@ -97,7 +93,6 @@ export function Sidebar() {
       transition={{ duration: 0.25, ease: 'easeInOut' }}
       className="fixed left-0 top-0 h-screen bg-sidebar flex flex-col z-40 shadow-sidebar overflow-hidden"
     >
-      {/* Logo */}
       <div className="h-16 shrink-0 border-b border-white/10">
         <div className="flex items-center h-full px-4 gap-3">
           <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center shrink-0 cursor-pointer overflow-hidden shadow-sm" onClick={() => navigate('/')}>
@@ -119,7 +114,6 @@ export function Sidebar() {
         </div>
       </div>
 
-      {/* Role label */}
       <AnimatePresence>
         {!sidebarCollapsed && (
           <motion.div
@@ -135,7 +129,6 @@ export function Sidebar() {
         )}
       </AnimatePresence>
 
-      {/* Nav items */}
       <nav className="flex-1 overflow-y-auto scrollbar-thin py-3 px-2 space-y-0.5">
         {navItems.map((item) => (
           <NavLink
@@ -143,11 +136,7 @@ export function Sidebar() {
             to={item.to}
             end={item.end}
             className={({ isActive }) =>
-              cn(
-                'sidebar-link',
-                isActive && 'active',
-                sidebarCollapsed && 'justify-center px-0'
-              )
+              cn('sidebar-link', isActive && 'active', sidebarCollapsed && 'justify-center px-0')
             }
             title={sidebarCollapsed ? item.label : undefined}
           >
@@ -169,7 +158,6 @@ export function Sidebar() {
         ))}
       </nav>
 
-      {/* Toggle button */}
       <div className="p-3 border-t border-white/10">
         <button
           onClick={toggleSidebar}
