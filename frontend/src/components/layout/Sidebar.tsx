@@ -59,12 +59,15 @@ const adminNav: NavItem[] = [
 const facultyNav: NavItem[] = [
   { label: 'Dashboard', to: '/faculty/dashboard', icon: <LayoutDashboard className="w-4 h-4" />, end: true },
   { label: 'My Students', to: '/faculty/students', icon: <Users className="w-4 h-4" /> },
-  { label: 'Progress', to: '/faculty/progress', icon: <TrendingUp className="w-4 h-4" /> },
-  { label: 'Leaderboard', to: '/faculty/leaderboard', icon: <Trophy className="w-4 h-4" /> },
-  { label: 'Inactive Students', to: '/faculty/inactive', icon: <UserX className="w-4 h-4" /> },
-  { label: 'Weekly Report', to: '/faculty/reports/weekly', icon: <FileText className="w-4 h-4" /> },
-  { label: 'Monthly Report', to: '/faculty/reports/monthly', icon: <BarChart3 className="w-4 h-4" /> },
-  { label: 'Compare', to: '/faculty/compare', icon: <GitCompare className="w-4 h-4" /> },
+  { label: 'Daily Activity', to: '/faculty/activity/daily', icon: <Activity className="w-4 h-4" /> },
+  { label: 'Weekly Activity', to: '/faculty/activity/weekly', icon: <Zap className="w-4 h-4" /> },
+  { label: 'Monthly Activity', to: '/faculty/activity/monthly', icon: <TrendingUp className="w-4 h-4" /> },
+  { label: 'Contest History', to: '/faculty/contests', icon: <Trophy className="w-4 h-4" /> },
+  { label: 'Leaderboard', to: '/faculty/leaderboard', icon: <BarChart3 className="w-4 h-4" /> },
+  { label: 'Reports', to: '/faculty/reports', icon: <FileText className="w-4 h-4" /> },
+  { label: 'Notifications', to: '/faculty/notifications', icon: <Bell className="w-4 h-4" /> },
+  { label: 'Profile', to: '/faculty/profile', icon: <UserCircle className="w-4 h-4" /> },
+  { label: 'Settings', to: '/faculty/settings', icon: <Settings className="w-4 h-4" /> },
 ]
 
 const studentNav: NavItem[] = [

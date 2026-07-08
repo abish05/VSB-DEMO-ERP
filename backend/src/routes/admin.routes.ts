@@ -492,11 +492,21 @@ router.put('/users/:id/role', async (req: AuthRequest, res: Response) => {
 router.delete('/users/:id', async (req: AuthRequest, res: Response) => {
   try {
     const id = req.params.id as string
-    await prisma.user.delete({
-      where: { id }
-    })
+    
+    // Perform manual cascade deletes to handle databases without onDelete Cascade
+    await prisma.$transaction([
+      prisma.leetCodeProfile.deleteMany({ where: { userId: id } }),
+      prisma.dailyActivity.deleteMany({ where: { userId: id } }),
+      prisma.contestHistory.deleteMany({ where: { userId: id } }),
+      prisma.notification.deleteMany({ where: { userId: id } }),
+      prisma.syncLog.deleteMany({ where: { userId: id } }),
+      prisma.section.deleteMany({ where: { facultyId: id } }),
+      prisma.user.delete({ where: { id } })
+    ])
+    
     res.json({ message: 'User deleted' })
   } catch (err) {
+    console.error("Delete user error:", err)
     res.status(400).json({ message: 'Failed to delete user' })
   }
 })
@@ -837,8 +847,8 @@ router.post('/settings', async (req: AuthRequest, res: Response) => {
     // Log settings change to Audit Log
     const changes: string[] = []
     Object.keys(req.body).forEach(key => {
-      if (prev[key] !== updated[key]) {
-        changes.push(`${key}: ${prev[key]} -> ${updated[key]}`)
+      if ((prev as any)[key] !== (updated as any)[key]) {
+        changes.push(`${key}: ${(prev as any)[key]} -> ${(updated as any)[key]}`)
       }
     })
     

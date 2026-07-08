@@ -36,6 +36,13 @@ const InactiveStudentsPage = lazy(() => import('@/pages/faculty/InactiveStudents
 const WeeklyReportPage = lazy(() => import('@/pages/faculty/WeeklyReportPage'))
 const MonthlyReportPage = lazy(() => import('@/pages/faculty/MonthlyReportPage'))
 const StudentComparePage = lazy(() => import('@/pages/faculty/StudentComparePage'))
+const FacultyDailyActivityPage = lazy(() => import('@/pages/faculty/FacultyDailyActivityPage'))
+const FacultyWeeklyActivityPage = lazy(() => import('@/pages/faculty/FacultyWeeklyActivityPage'))
+const FacultyMonthlyActivityPage = lazy(() => import('@/pages/faculty/FacultyMonthlyActivityPage'))
+const FacultyContestHistoryPage = lazy(() => import('@/pages/faculty/FacultyContestHistoryPage'))
+const FacultyNotificationsPage = lazy(() => import('@/pages/faculty/FacultyNotificationsPage'))
+const FacultyProfilePage = lazy(() => import('@/pages/faculty/FacultyProfilePage'))
+const FacultySettingsPage = lazy(() => import('@/pages/faculty/FacultySettingsPage'))
 
 // Student
 const StudentDashboard = lazy(() => import('@/pages/student/StudentDashboard'))
@@ -143,6 +150,14 @@ const router = createBrowserRouter([
       { path: '/faculty/reports/weekly', element: <WeeklyReportPage /> },
       { path: '/faculty/reports/monthly', element: <MonthlyReportPage /> },
       { path: '/faculty/compare', element: <StudentComparePage /> },
+      { path: '/faculty/activity/daily', element: <FacultyDailyActivityPage /> },
+      { path: '/faculty/activity/weekly', element: <FacultyWeeklyActivityPage /> },
+      { path: '/faculty/activity/monthly', element: <FacultyMonthlyActivityPage /> },
+      { path: '/faculty/contests', element: <FacultyContestHistoryPage /> },
+      { path: '/faculty/reports', element: <WeeklyReportPage /> },
+      { path: '/faculty/notifications', element: <FacultyNotificationsPage /> },
+      { path: '/faculty/profile', element: <FacultyProfilePage /> },
+      { path: '/faculty/settings', element: <FacultySettingsPage /> },
     ],
   },
   // Student routes
